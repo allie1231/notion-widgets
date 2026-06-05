@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Calendar · Dream</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pk:#FFD4E8; --sk:#C8E4FF; --mid:#E8D4FF;
+  --text:#2C1850; --muted:#A080C0;
+  --ac:#C850A0; --ac2:#5880D0;
+  --glow:rgba(200,80,160,.35); --glow2:rgba(200,80,160,.18);
+  --card:rgba(255,255,255,.58); --cbd:rgba(255,255,255,.82);
+  --ibd:rgba(200,160,220,.2);
+}
+html,body{
+  min-height:100%; font-family:'Space Mono',monospace;
+  background:transparent;
+  display:flex; justify-content:center; align-items:flex-start;
+  padding:24px 16px;
+}
+
+.widget{
+  width:268px; background:rgba(255,248,254,0.96);
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--cbd); border-radius:16px;
+  position:relative; overflow:hidden;
+  animation:float 6s ease-in-out infinite;
+  box-shadow:0 8px 32px rgba(200,100,160,.16),0 2px 8px rgba(200,100,160,.1);
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.header{padding:14px 16px 12px;border-bottom:1px solid var(--ibd);position:relative}
+.yr{font-size:9px;color:var(--muted);letter-spacing:.18em;display:block;margin-bottom:3px}
+.mo{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:24px;font-weight:300;color:var(--ac);letter-spacing:.02em;line-height:1}
+.nav{position:absolute;top:18px;right:14px;display:flex;gap:12px}
+.nb{font-size:14px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;transition:color .12s;padding:0;line-height:1}
+.nb:hover{color:var(--ac)}
+.cal{padding:10px 14px}
+.dhr{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px}
+.dh{text-align:center;font-size:7px;color:var(--muted);padding:2px 0;letter-spacing:.08em;opacity:.7}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px}
+.cell{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;color:var(--muted);cursor:pointer;position:relative;transition:color .1s;gap:2px}
+.cell:not(.empty):hover{color:var(--ac)}
+.cell.empty{cursor:default;pointer-events:none}
+.cell .n{line-height:1}
+.cell .d{width:3px;height:3px;border-radius:50%;background:transparent;transition:all .2s}
+.cell.read{color:var(--ac);font-weight:700}
+.cell.read .d{background:var(--ac);box-shadow:0 0 5px var(--glow),0 0 10px var(--glow2)}
+.cell.today .n{outline:1.5px solid rgba(200,80,160,.4);outline-offset:3px}
+.cell.we{color:rgba(160,128,192,.5)}
+.cell.read.we{color:rgba(200,80,160,.6)}
+.footer{padding:9px 14px 11px;border-top:1px solid var(--ibd);display:flex;justify-content:space-between;align-items:center}
+.stat{font-size:8px;color:var(--muted);letter-spacing:.12em}
+.stat em{font-style:normal;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:300;color:var(--ac);margin-right:3px}
+.hint{font-size:7px;color:rgba(160,128,192,.5);letter-spacing:.08em}
+</style>
+</head>
+<body>
+<div class="widget">
+  <div class="header">
+    <span class="yr" id="yr">2026</span>
+    <span class="mo" id="mo">June</span>
+    <div class="nav">
+      <button class="nb" onclick="move(-1)" aria-label="이전 달">‹</button>
+      <button class="nb" onclick="move(+1)" aria-label="다음 달">›</button>
+    </div>
+  </div>
+  <div class="cal">
+    <div class="dhr">
+      <div class="dh">Mo</div><div class="dh">Tu</div><div class="dh">We</div>
+      <div class="dh">Th</div><div class="dh">Fr</div>
+      <div class="dh" style="opacity:.4">Sa</div><div class="dh" style="opacity:.4">Su</div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div class="footer">
+    <div class="stat"><em id="cnt">0</em>DAYS READ</div>
+    <div class="hint">CLICK · TOGGLE</div>
+  </div>
+</div>
+<script>
+const MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const now=new Date(); let cY=now.getFullYear(),cM=now.getMonth()+1;
+const key=(y,m)=>`rc_${y}_${m}`;
+const ld=(y,m)=>{const r=localStorage.getItem(key(y,m));return r?new Set(JSON.parse(r)):new Set();};
+const sv=(y,m,d)=>localStorage.setItem(key(y,m),JSON.stringify([...d]));
+function toggle(y,m,d){const s=ld(y,m);s.has(d)?s.delete(d):s.add(d);sv(y,m,s);render();}
+function render(){
+  const y=cY,m=cM,days=ld(y,m);
+  const today=new Date(),isCur=today.getFullYear()===y&&today.getMonth()+1===m;
+  const todayD=isCur?today.getDate():-1;
+  document.getElementById('yr').textContent=y;
+  document.getElementById('mo').textContent=MO[m-1];
+  document.getElementById('cnt').textContent=days.size;
+  const fd=new Date(y,m-1,1).getDay(),ld2=new Date(y,m,0).getDate(),off=fd===0?6:fd-1;
+  let html='';
+  for(let i=0;i<off;i++)html+='<div class="cell empty"><span class="n"></span><span class="d"></span></div>';
+  for(let d=1;d<=ld2;d++){
+    const col=(off+d-1)%7,we=col===5||col===6,rd=days.has(d),td=d===todayD;
+    const cls=['cell',we?'we':'',rd?'read':'',td?'today':''].filter(Boolean).join(' ');
+    html+=`<div class="${cls}" onclick="toggle(${y},${m},${d})"><span class="n">${d}</span><span class="d"></span></div>`;
+  }
+  document.getElementById('grid').innerHTML=html;
+}
+function move(d){cM+=d;if(cM>12){cM=1;cY++;}if(cM<1){cM=12;cY--;}render();}
+render();
+</script>
+</body>
+</html>
