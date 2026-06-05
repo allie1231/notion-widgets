@@ -8,7 +8,7 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background: #e8e0d0;
+    background: transparent;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -20,27 +20,11 @@
 
   /* paper texture via CSS */
   body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image:
-      repeating-linear-gradient(
-        0deg, transparent, transparent 27px, rgba(0,0,0,0.04) 27px, rgba(0,0,0,0.04) 28px
-      );
-    pointer-events: none;
-  }
+    content: none;
 
   /* aged paper stains */
   body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse at 10% 80%, rgba(139,100,60,0.06) 0%, transparent 50%),
-      radial-gradient(ellipse at 85% 20%, rgba(139,100,60,0.05) 0%, transparent 40%),
-      radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0,0,0,0.08) 100%);
-    pointer-events: none;
-  }
+    content: none;
 
   .paper {
     position: relative;
