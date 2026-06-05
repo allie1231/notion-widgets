@@ -1,0 +1,163 @@
+
+<h2 class="sr-only">독서 타이머 위젯 — iPod 스타일 Notion 임베드 위젯 데모</h2>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.wrap{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0}
+.themes{display:flex;gap:6px;align-items:center}
+.thlabel{font-size:10px;color:var(--color-text-tertiary);font-family:monospace;margin-right:4px}
+.tb{width:20px;height:20px;border-radius:50%;border:2px solid transparent;cursor:pointer;transition:border-color .2s}
+.tb.on{border-color:var(--color-text-primary)}
+.timeset{display:flex;gap:5px}
+.tsb{font-size:9px;padding:3px 9px;border-radius:10px;border:.5px solid transparent;cursor:pointer;font-family:'Space Mono',monospace;transition:all .2s}
+.ipod{width:210px;border-radius:24px;padding:13px 13px 17px;transition:background .3s}
+.screen{background:#fff;border-radius:9px;overflow:hidden;margin-bottom:14px}
+.shead{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;font-size:8px;font-weight:700;letter-spacing:.05em}
+.sbody{display:flex;gap:8px;padding:9px 8px;align-items:center}
+.bcover{width:50px;height:50px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .3s}
+.tinfo{flex:1;min-width:0}
+.ttitle{font-size:10px;font-weight:700;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tsub{font-size:8px;opacity:.7}
+.parea{padding:5px 8px 7px}
+.pbar{height:3px;border-radius:2px;margin-bottom:3px;overflow:hidden;transition:background .3s}
+.pfill{height:100%;border-radius:2px;width:0%;transition:width .5s linear}
+.tdisp{display:flex;justify-content:flex-end;font-family:'Space Mono',monospace;font-size:9px}
+.wheelwrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.mlabel{font-size:8px;font-weight:700;letter-spacing:.1em;opacity:.6}
+.wheel{width:108px;height:108px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;transition:background .3s}
+.wb{position:absolute;font-size:8px;font-weight:700;cursor:pointer;user-select:none;transition:color .3s}
+.wb-t{top:9px;left:50%;transform:translateX(-50%);letter-spacing:.05em}
+.wb-l{left:9px;top:50%;transform:translateY(-50%)}
+.wb-r{right:9px;top:50%;transform:translateY(-50%)}
+.wb-b{bottom:9px;left:50%;transform:translateX(-50%)}
+.cbtn{width:34px;height:34px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.cbtn:active{transform:scale(.93)}
+.note{font-size:9px;color:var(--color-text-tertiary);font-family:monospace;text-align:center;line-height:1.6}
+</style>
+
+<div class="wrap">
+<div class="themes">
+  <span class="thlabel">theme</span>
+  <div class="tb on" style="background:#F5E0EC" onclick="st('pink',this)"></div>
+  <div class="tb" style="background:#D6E8F5" onclick="st('blue',this)"></div>
+  <div class="tb" style="background:#222" onclick="st('dark',this)"></div>
+  <div class="tb" style="background:#F5F0DC" onclick="st('cream',this)"></div>
+</div>
+
+<div class="timeset">
+  <div class="tsb" onclick="setT(10,this)">10M</div>
+  <div class="tsb" onclick="setT(25,this)">25M</div>
+  <div class="tsb on" onclick="setT(30,this)">30M</div>
+  <div class="tsb" onclick="setT(60,this)">1H</div>
+</div>
+
+<div class="ipod" id="ipod" style="background:#F5E0EC">
+  <div class="screen">
+    <div class="shead" id="sh" style="color:#E87BA0;border-bottom:.5px solid #F5E0EC">
+      <span>Now Playing</span>
+      <span><i class="ti ti-player-play" style="font-size:7px" aria-hidden="true"></i> <i class="ti ti-battery-2" style="font-size:7px" aria-hidden="true"></i></span>
+    </div>
+    <div class="sbody">
+      <div class="bcover" id="bc" style="background:#F5E0EC">
+        <i class="ti ti-book" style="font-size:18px" aria-hidden="true" id="bi" style="color:#E87BA0"></i>
+      </div>
+      <div class="tinfo">
+        <div class="ttitle" id="ttl" style="color:#E87BA0">Reading...</div>
+        <div class="tsub" id="tsub" style="color:#D9A0BB">Remaining Time</div>
+      </div>
+    </div>
+    <div class="parea">
+      <div class="pbar" id="pb" style="background:#F5E0EC">
+        <div class="pfill" id="pf" style="background:#E87BA0"></div>
+      </div>
+      <div class="tdisp" id="td" style="color:#E87BA0">-30:00</div>
+    </div>
+  </div>
+  <div class="wheelwrap">
+    <div class="mlabel" id="ml" style="color:#D9A0BB">MENU</div>
+    <div class="wheel" id="whl" style="background:#fff">
+      <span class="wb wb-t" id="wt" style="color:#E87BA0">MENU</span>
+      <span class="wb wb-l" id="wl" style="color:#E87BA0" onclick="resetT()">◀◀</span>
+      <span class="wb wb-r" id="wr" style="color:#E87BA0">▶▶</span>
+      <span class="wb wb-b" id="wb2" style="color:#E87BA0">▶ ‖</span>
+      <button class="cbtn" id="cb" style="background:#F5E0EC" onclick="togglePlay()">
+        <i class="ti ti-player-play" style="font-size:13px;color:#E87BA0" id="ci" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  HTML 저장 → GitHub Pages 배포<br>
+  Notion에서 /embed → URL 입력
+</div>
+</div>
+
+<script>
+const TH={
+  pink: {bd:'#F5E0EC',ac:'#E87BA0',ac2:'#D9A0BB',wh:'#fff',cb:'#F5E0EC',bc:'#F5E0EC'},
+  blue: {bd:'#C5DEF5',ac:'#5580CC',ac2:'#7AAAC0',wh:'#fff',cb:'#D6E8F5',bc:'#D6E8F5'},
+  dark: {bd:'#1E1E1E',ac:'#E0E0E0',ac2:'#888',wh:'#2A2A2A',cb:'#333',bc:'#2A2A2A'},
+  cream:{bd:'#F5EDD8',ac:'#9A7040',ac2:'#B8935A',wh:'#FFF8EE',cb:'#F0E8C8',bc:'#F0E8C8'},
+};
+let cur='pink', totalSec=30*60, rem=totalSec, running=false, tmr=null;
+
+function ap(k){
+  const t=TH[k];
+  document.getElementById('ipod').style.background=t.bd;
+  ['sh','ttl'].forEach(i=>document.getElementById(i).style.color=t.ac);
+  document.getElementById('sh').style.borderBottomColor=t.bd;
+  document.getElementById('tsub').style.color=t.ac2;
+  document.getElementById('pb').style.background=t.bc;
+  document.getElementById('pf').style.background=t.ac;
+  document.getElementById('td').style.color=t.ac;
+  document.getElementById('ml').style.color=t.ac2;
+  document.getElementById('whl').style.background=t.wh;
+  ['wt','wl','wr','wb2'].forEach(i=>document.getElementById(i).style.color=t.ac);
+  document.getElementById('cb').style.background=t.cb;
+  document.getElementById('ci').style.color=t.ac;
+  document.getElementById('bc').style.background=t.bc;
+  document.getElementById('bi').style.color=t.ac;
+  document.querySelectorAll('.tsb').forEach(b=>{
+    if(b.classList.contains('on')){b.style.background=t.ac;b.style.color='#fff';b.style.borderColor=t.ac;}
+    else{b.style.background=t.ac+'22';b.style.color=t.ac;b.style.borderColor=t.ac+'44';}
+  });
+  cur=k;
+}
+function st(k,el){
+  ap(k);
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+function fmt(s){return `-${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
+function upd(){
+  document.getElementById('td').textContent=fmt(rem);
+  document.getElementById('pf').style.width=((totalSec-rem)/totalSec*100)+'%';
+}
+function setT(m,el){
+  if(running)togglePlay();
+  totalSec=m*60;rem=totalSec;upd();
+  document.querySelectorAll('.tsb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  ap(cur);
+}
+function togglePlay(){
+  if(rem<=0){resetT();return;}
+  running=!running;
+  if(running){
+    tmr=setInterval(()=>{rem--;upd();if(rem<=0){clearInterval(tmr);running=false;document.getElementById('ci').className='ti ti-player-play';document.getElementById('ttl').textContent='완료 ✓';}},1000);
+    document.getElementById('ci').className='ti ti-player-pause';
+    document.getElementById('ttl').textContent='Reading...';
+  }else{
+    clearInterval(tmr);
+    document.getElementById('ci').className='ti ti-player-play';
+  }
+}
+function resetT(){
+  if(running){clearInterval(tmr);running=false;}
+  rem=totalSec;upd();
+  document.getElementById('ci').className='ti ti-player-play';
+  document.getElementById('ttl').textContent='Reading...';
+}
+upd();ap('pink');
+</script>
