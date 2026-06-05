@@ -1,0 +1,56 @@
+[
+  {
+    "id": "sample-1",
+    "title": "파친코",
+    "author": "이민진",
+    "status": "읽는 중",
+    "started": "2025-05-10",
+    "finished": null,
+    "cover": ""
+  },
+  {
+    "id": "sample-2",
+    "title": "당신이 옳다",
+    "author": "정혜신",
+    "status": "읽는 중",
+    "started": "2025-05-20",
+    "finished": null,
+    "cover": ""
+  },
+  {
+    "id": "sample-3",
+    "title": "함께 자라기",
+    "author": "김창준",
+    "status": "완독",
+    "started": "2025-04-01",
+    "finished": "2025-04-18",
+    "cover": ""
+  },
+  {
+    "id": "sample-4",
+    "title": "디자인의 디자인",
+    "author": "하라 켄야",
+    "status": "완독",
+    "started": "2025-03-05",
+    "finished": "2025-03-28",
+    "cover": ""
+  },
+  {
+    "id": "sample-5",
+    "title": "나는 나로 살기로 했다",
+    "author": "김수현",
+    "status": "완독",
+    "started": "2025-02-10",
+    "finished": "2025-02-22",
+    "cover": ""
+  },
+  {
+    "id": "sample-6",
+    "title": "모든 것은 기본에서 시작한다",
+    "author": "조수용",
+    "status": "완독",
+    "started": "2025-01-15",
+    "finished": "2025-01-30",
+    "cover": ""
+  }
+]

@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tamagotchi Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; image-rendering: pixelated; }
+  body {
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Press Start 2P', monospace;
+    padding: 1.5rem;
+  }
+
+  .device {
+    background: #c8c8b8;
+    border-radius: 50% 50% 40% 40% / 30% 30% 20% 20%;
+    padding: 1.5rem 1.5rem 2.5rem;
+    width: 260px;
+    box-shadow:
+      inset 0 -4px 0 #a0a090,
+      inset 4px 0 0 #ddddd0,
+      0 8px 24px rgba(0,0,0,0.5),
+      0 2px 4px rgba(0,0,0,0.3);
+    position: relative;
+  }
+
+  /* screen bezel */
+  .screen-bezel {
+    background: #888878;
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 1rem;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 2px 0 #aaaa98;
+  }
+  .screen {
+    background: #a8c890;
+    border-radius: 8px;
+    padding: 8px 6px;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+  }
+  /* screen noise */
+  .screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+  }
+
+  .screen-top {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 5px;
+    color: #2a4a28;
+    letter-spacing: 0.05em;
+  }
+
+  /* pixel character using CSS */
+  .char-wrap {
+    position: relative;
+    width: 48px;
+    height: 48px;
+  }
+  .pixel-char {
+    display: grid;
+    grid-template-columns: repeat(8, 6px);
+    grid-template-rows: repeat(8, 6px);
+    gap: 0px;
+  }
+  .p { width: 6px; height: 6px; }
+  .p0 { background: transparent; }
+  .p1 { background: #2a4a28; }  /* dark (body) */
+  .p2 { background: #a8c890; }  /* transparent (screen bg) */
+  .p3 { background: #6a9a68; }  /* mid (shadow) */
+
+  .screen-bottom {
+    font-size: 5px;
+    color: #2a4a28;
+    letter-spacing: 0.08em;
+    animation: blink-text 2s step-end infinite;
+  }
+  @keyframes blink-text {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* stats bar */
+  .stats {
+    display: flex;
+    justify-content: space-around;
+    font-size: 5px;
+    color: #4a4a3a;
+    margin-top: 0.5rem;
+    letter-spacing: 0.05em;
+    padding: 0 0.2rem;
+  }
+
+  /* habits section */
+  .habits {
+    margin-top: 0.6rem;
+  }
+  .habit-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 4px;
+    cursor: pointer;
+    border-bottom: 1px solid #aaaa98;
+    transition: background 0.1s;
+  }
+  .habit-row:last-child { border-bottom: none; }
+  .habit-row:hover { background: rgba(0,0,0,0.05); }
+
+  .pixel-cb {
+    width: 10px;
+    height: 10px;
+    border: 2px solid #666658;
+    background: transparent;
+    flex-shrink: 0;
+    position: relative;
+    image-rendering: pixelated;
+  }
+  .pixel-cb.checked {
+    background: #2a4a28;
+  }
+  .pixel-cb.checked::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    background: #a8c890;
+    clip-path: polygon(20% 45%, 10% 55%, 40% 80%, 90% 20%, 80% 10%, 40% 60%);
+  }
+
+  .habit-name {
+    font-size: 6px;
+    color: #3a3a2a;
+    letter-spacing: 0.05em;
+    flex: 1;
+  }
+  .habit-name.done { color: #888878; text-decoration: line-through; }
+
+  /* progress bar */
+  .progress-wrap {
+    margin-top: 0.5rem;
+    padding: 0 4px;
+  }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 5px;
+    color: #4a4a3a;
+    margin-bottom: 3px;
+    letter-spacing: 0.05em;
+  }
+  .progress-track {
+    height: 6px;
+    background: #aaaa98;
+    border: 1px solid #888878;
+    image-rendering: pixelated;
+  }
+  .progress-fill {
+    height: 100%;
+    background: #2a4a28;
+    transition: width 0.3s steps(10);
+  }
+
+  /* buttons */
+  .buttons {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1.2rem;
+    padding: 0 0.5rem;
+  }
+  .btn-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .pixel-btn {
+    width: 20px;
+    height: 20px;
+    background: #7a7a68;
+    border-radius: 50%;
+    box-shadow: 0 3px 0 #555548, 0 1px 0 #999988;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .pixel-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #555548;
+  }
+  .btn-label {
+    font-size: 4px;
+    color: #555548;
+    letter-spacing: 0.05em;
+  }
+  .center-btn {
+    width: 28px;
+    height: 28px;
+    background: #c85858;
+    border-radius: 50%;
+    box-shadow: 0 3px 0 #883838, 0 1px 0 #e87878;
+    cursor: pointer;
+    border: none;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="device">
+  <div class="screen-bezel">
+    <div class="screen">
+      <div class="screen-top">
+        <span id="time-small">00:00</span>
+        <span id="mood-label">HAPPY</span>
+      </div>
+
+      <!-- pixel character rendered by JS -->
+      <canvas id="char-canvas" width="56" height="56" style="image-rendering:pixelated;"></canvas>
+
+      <div class="screen-bottom" id="status-text">LET'S GO!</div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <span>HP <span id="hp">♥♥♥</span></span>
+    <span>EXP <span id="exp">000</span></span>
+  </div>
+
+  <div class="habits" id="habit-list"></div>
+
+  <div class="progress-wrap">
+    <div class="progress-label">
+      <span>TODAY</span>
+      <span id="prog-text">0/0</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+  </div>
+
+  <div class="buttons">
+    <div class="btn-group">
+      <button class="pixel-btn" onclick="prevPage()"></button>
+      <span class="btn-label">MENU</span>
+    </div>
+    <div class="btn-group">
+      <button class="center-btn" onclick="resetAll()"></button>
+      <span class="btn-label">RESET</span>
+    </div>
+    <div class="btn-group">
+      <button class="pixel-btn" onclick="addHabit()"></button>
+      <span class="btn-label">+ADD</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const HABITS_KEY = 'tama_habits';
+const STATE_KEY  = 'tama_state_';
+
+function todayKey() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+}
+
+const DEFAULT_HABITS = [
+  '물 8잔 마시기',
+  '운동 30분',
+  '독서 20분',
+  '일기 쓰기',
+  '스트레칭',
+];
+
+function loadHabits() {
+  return JSON.parse(localStorage.getItem(HABITS_KEY) || JSON.stringify(DEFAULT_HABITS));
+}
+function saveHabits(h) { localStorage.setItem(HABITS_KEY, JSON.stringify(h)); }
+
+function loadState() {
+  return JSON.parse(localStorage.getItem(STATE_KEY + todayKey()) || '{}');
+}
+function saveState(s) { localStorage.setItem(STATE_KEY + todayKey(), JSON.stringify(s)); }
+
+let habits = loadHabits();
+let state  = loadState(); // { habitIndex: true/false }
+
+function getPct() {
+  if (!habits.length) return 0;
+  return habits.filter((_,i) => state[i]).length / habits.length;
+}
+
+function getMood() {
+  const p = getPct();
+  if (p >= 1.0) return { label: 'PERFECT!', text: 'YAY!! ALL DONE!', hp: '♥♥♥' };
+  if (p >= 0.6) return { label: 'GOOD',    text: 'KEEP GOING!',   hp: '♥♥♡' };
+  if (p >= 0.3) return { label: 'OK',      text: 'YOU CAN DO IT', hp: '♥♡♡' };
+  return            { label: 'HUNGRY',  text: 'FEED ME!!',     hp: '♡♡♡' };
+}
+
+// pixel characters: 8x8 grids
+// 0=transparent, 1=dark, 3=mid
+const CHARS = {
+  happy: [
+    0,0,1,1,1,1,0,0,
+    0,1,0,0,0,0,1,0,
+    1,0,1,0,0,1,0,1,
+    1,0,0,0,0,0,0,1,
+    1,0,1,0,0,1,0,1,
+    1,0,0,1,1,0,0,1,
+    0,1,0,0,0,0,1,0,
+    0,0,1,1,1,1,0,0,
+  ],
+  good: [
+    0,0,1,1,1,1,0,0,
+    0,1,0,0,0,0,1,0,
+    1,0,1,0,0,1,0,1,
+    1,0,0,0,0,0,0,1,
+    1,0,0,0,0,0,0,1,
+    1,0,0,1,1,0,0,1,
+    0,1,0,0,0,0,1,0,
+    0,0,1,1,1,1,0,0,
+  ],
+  ok: [
+    0,0,1,1,1,1,0,0,
+    0,1,0,0,0,0,1,0,
+    1,0,1,0,0,1,0,1,
+    1,0,0,0,0,0,0,1,
+    1,0,0,0,0,0,0,1,
+    1,0,1,1,1,1,0,1,
+    0,1,0,0,0,0,1,0,
+    0,0,1,1,1,1,0,0,
+  ],
+  sad: [
+    0,0,1,1,1,1,0,0,
+    0,1,0,0,0,0,1,0,
+    1,0,1,0,0,1,0,1,
+    1,0,0,0,0,0,0,1,
+    1,0,0,1,1,0,0,1,
+    1,0,1,0,0,1,0,1,
+    0,1,0,0,0,0,1,0,
+    0,0,1,1,1,1,0,0,
+  ]
+};
+
+function drawChar() {
+  const p = getPct();
+  let key = p >= 1.0 ? 'happy' : p >= 0.6 ? 'good' : p >= 0.3 ? 'ok' : 'sad';
+  const grid = CHARS[key];
+  const canvas = document.getElementById('char-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 56, 56);
+  const size = 7;
+  const offset = 0;
+  grid.forEach((v, i) => {
+    if (!v) return;
+    const x = (i % 8) * size + offset;
+    const y = Math.floor(i / 8) * size + offset;
+    ctx.fillStyle = v === 1 ? '#2a4a28' : '#6a9a68';
+    ctx.fillRect(x, y, size, size);
+  });
+  // bounce animation
+  if (p >= 1.0) {
+    const bounce = Math.sin(Date.now() / 300) * 3;
+    canvas.style.transform = `translateY(${bounce}px)`;
+  } else {
+    canvas.style.transform = '';
+  }
+}
+
+function render() {
+  const list = document.getElementById('habit-list');
+  list.innerHTML = '';
+  habits.forEach((h, i) => {
+    const row = document.createElement('div');
+    row.className = 'habit-row';
+    row.onclick = () => { state[i] = !state[i]; saveState(state); render(); };
+
+    const cb = document.createElement('div');
+    cb.className = 'pixel-cb' + (state[i] ? ' checked' : '');
+
+    const name = document.createElement('span');
+    name.className = 'habit-name' + (state[i] ? ' done' : '');
+    name.textContent = h;
+
+    row.appendChild(cb);
+    row.appendChild(name);
+    list.appendChild(row);
+  });
+
+  const done  = habits.filter((_,i) => state[i]).length;
+  const total = habits.length;
+  const pct   = total ? Math.round(done/total*100) : 0;
+
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-text').textContent = `${done}/${total}`;
+
+  const mood = getMood();
+  document.getElementById('mood-label').textContent = mood.label;
+  document.getElementById('status-text').textContent = mood.text;
+  document.getElementById('hp').textContent = mood.hp;
+  document.getElementById('exp').textContent = String(done * 10 + pct).padStart(3,'0');
+}
+
+function addHabit() {
+  const name = prompt('새 습관 이름:');
+  if (!name || !name.trim()) return;
+  habits.push(name.trim());
+  saveHabits(habits);
+  render();
+}
+
+function resetAll() {
+  if (!confirm('오늘 체크 리셋할까요?')) return;
+  state = {};
+  saveState(state);
+  render();
+}
+
+function prevPage() { /* reserved */ }
+
+// clock
+function tickClock() {
+  const n = new Date();
+  const h = String(n.getHours()).padStart(2,'0');
+  const m = String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('time-small').textContent = `${h}:${m}`;
+}
+tickClock();
+setInterval(tickClock, 60000);
+
+render();
+setInterval(() => { drawChar(); }, 100);
+drawChar();
+</script>
+</body>
+</html>

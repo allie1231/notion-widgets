@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Typewriter</title>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IM+Fell+English+SC&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #e8e0d0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* paper texture via CSS */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(
+        0deg, transparent, transparent 27px, rgba(0,0,0,0.04) 27px, rgba(0,0,0,0.04) 28px
+      );
+    pointer-events: none;
+  }
+
+  /* aged paper stains */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 10% 80%, rgba(139,100,60,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 85% 20%, rgba(139,100,60,0.05) 0%, transparent 40%),
+      radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0,0,0,0.08) 100%);
+    pointer-events: none;
+  }
+
+  .paper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    padding: 2.5rem 2rem;
+    background: #f5eedf;
+    box-shadow:
+      2px 2px 0 #d8cfc0,
+      4px 4px 0 #c8c0b0,
+      0 8px 24px rgba(0,0,0,0.15);
+  }
+
+  /* paper holes */
+  .holes {
+    position: absolute;
+    left: 12px;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    pointer-events: none;
+  }
+  .hole {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #e8e0d0;
+    border: 1px solid #c8c0b0;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+    padding-left: 1.5rem;
+  }
+  .stamp {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 9px;
+    color: #8a6a50;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    opacity: 0.7;
+    transform: rotate(-2deg);
+    display: inline-block;
+  }
+  .date-stamp {
+    font-family: 'Special Elite', serif;
+    font-size: 10px;
+    color: #8a6a50;
+    opacity: 0.6;
+    text-align: right;
+  }
+
+  /* quote area */
+  .quote-wrap {
+    padding-left: 1.5rem;
+    min-height: 100px;
+    margin-bottom: 1.5rem;
+    position: relative;
+  }
+
+  /* opening quote mark */
+  .quote-wrap::before {
+    content: '"';
+    position: absolute;
+    left: -0.2rem;
+    top: -1rem;
+    font-family: 'IM Fell English SC', serif;
+    font-size: 5rem;
+    color: rgba(100,80,60,0.12);
+    line-height: 1;
+  }
+
+  .typed-text {
+    font-family: 'Special Elite', serif;
+    font-size: 15px;
+    line-height: 1.85;
+    color: #2a2018;
+    min-height: 80px;
+    letter-spacing: 0.03em;
+    position: relative;
+  }
+
+  /* blinking cursor */
+  .cursor {
+    display: inline-block;
+    width: 2px;
+    height: 1.1em;
+    background: #2a2018;
+    vertical-align: text-bottom;
+    margin-left: 1px;
+    animation: cursor-blink 0.7s step-end infinite;
+  }
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  .attribution {
+    padding-left: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+  .author {
+    font-family: 'IM Fell English SC', serif;
+    font-size: 11px;
+    color: #6a5040;
+    letter-spacing: 0.1em;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+  .author.visible { opacity: 1; }
+  .source {
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    color: #8a7060;
+    opacity: 0.7;
+    text-align: right;
+    max-width: 140px;
+  }
+
+  /* controls */
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-left: 1.5rem;
+  }
+  .ctrl-btn {
+    background: transparent;
+    border: 1px solid #b8a890;
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    color: #8a6a50;
+    padding: 4px 10px;
+    cursor: pointer;
+    letter-spacing: 0.15em;
+    transition: background 0.15s;
+  }
+  .ctrl-btn:hover { background: rgba(0,0,0,0.05); }
+
+  .quote-num {
+    font-family: 'Special Elite', serif;
+    font-size: 9px;
+    color: #b8a890;
+    text-align: center;
+    margin-top: 0.8rem;
+    letter-spacing: 0.15em;
+  }
+
+  /* typewriter noise mark */
+  .typo-mark {
+    position: absolute;
+    font-family: 'Special Elite', serif;
+    font-size: 11px;
+    color: rgba(0,0,0,0.04);
+    pointer-events: none;
+    transform: rotate(var(--r));
+  }
+</style>
+</head>
+<body>
+
+<div class="paper">
+  <div class="holes">
+    <div class="hole"></div>
+    <div class="hole"></div>
+    <div class="hole"></div>
+  </div>
+
+  <!-- random typo marks for aged paper feel -->
+  <span class="typo-mark" style="top:15%;left:78%;--r:-3deg">xх</span>
+  <span class="typo-mark" style="top:65%;left:12%;--r:2deg">///</span>
+
+  <div class="header">
+    <div class="stamp">Studio Itjae</div>
+    <div class="date-stamp" id="date-stamp"></div>
+  </div>
+
+  <div class="quote-wrap">
+    <div class="typed-text" id="typed"></div>
+  </div>
+
+  <div class="attribution">
+    <div class="author" id="author"></div>
+    <div class="source" id="source"></div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" onclick="prevQuote()">◀ PREV</button>
+    <button class="ctrl-btn" onclick="skipQuote()">SKIP ▶</button>
+  </div>
+  <div class="quote-num" id="qnum">— 1 / 1 —</div>
+</div>
+
+<script>
+// ── EDIT YOUR QUOTES HERE ──────────────────────────────────────────
+const QUOTES = [
+  {
+    text: "The details are not the details. They make the design.",
+    author: "Charles Eames",
+    source: "Design Q&A"
+  },
+  {
+    text: "Simplicity is the ultimate sophistication.",
+    author: "Leonardo da Vinci",
+    source: "Notebooks"
+  },
+  {
+    text: "Design is not just what it looks like and feels like. Design is how it works.",
+    author: "Steve Jobs",
+    source: "NYT Interview, 2003"
+  },
+  {
+    text: "좋은 디자인은 혼자 말하지 않는다. 사용자와 함께 말한다.",
+    author: "잇재 노트",
+    source: "2024"
+  },
+  {
+    text: "You can't use up creativity. The more you use, the more you have.",
+    author: "Maya Angelou",
+    source: ""
+  },
+  {
+    text: "The secret of getting ahead is getting started.",
+    author: "Mark Twain",
+    source: ""
+  },
+  {
+    text: "연결이 기획이고, 기획이 디자인이다.",
+    author: "잇재",
+    source: ""
+  },
+];
+// ──────────────────────────────────────────────────────────────────
+
+let currentIdx  = 0;
+let charIdx     = 0;
+let typing      = false;
+let typeTimeout = null;
+const BASE_SPEED = 38; // ms per character
+
+function getNow() {
+  const n = new Date();
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  return `${String(n.getDate()).padStart(2,'0')} ${months[n.getMonth()]} ${n.getFullYear()}`;
+}
+
+function clearTyping() {
+  clearTimeout(typeTimeout);
+  typing = false;
+}
+
+function typeQuote(q, fromChar = 0) {
+  clearTyping();
+  typing = true;
+  charIdx = fromChar;
+
+  const textEl   = document.getElementById('typed');
+  const authorEl = document.getElementById('author');
+  const sourceEl = document.getElementById('source');
+  authorEl.classList.remove('visible');
+
+  function step() {
+    if (!typing) return;
+    const partial = q.text.slice(0, charIdx);
+    textEl.innerHTML = partial.replace(/\n/g, '<br>') + '<span class="cursor"></span>';
+    if (charIdx < q.text.length) {
+      charIdx++;
+      // slight speed variation like a real typewriter
+      const delay = BASE_SPEED + (Math.random() * 30 - 10);
+      typeTimeout = setTimeout(step, delay);
+    } else {
+      // done typing
+      textEl.innerHTML = q.text.replace(/\n/g, '<br>') + '<span class="cursor"></span>';
+      authorEl.textContent = q.author ? `— ${q.author}` : '';
+      sourceEl.textContent = q.source || '';
+      authorEl.classList.add('visible');
+      typing = false;
+    }
+  }
+  step();
+}
+
+function loadQuote(idx, instant = false) {
+  const q = QUOTES[idx];
+  document.getElementById('qnum').textContent = `— ${idx + 1} / ${QUOTES.length} —`;
+  document.getElementById('author').classList.remove('visible');
+  document.getElementById('source').textContent = '';
+
+  if (instant) {
+    document.getElementById('typed').innerHTML = q.text + '<span class="cursor"></span>';
+    document.getElementById('author').textContent = q.author ? `— ${q.author}` : '';
+    document.getElementById('source').textContent = q.source || '';
+    document.getElementById('author').classList.add('visible');
+  } else {
+    typeQuote(q);
+  }
+}
+
+function skipQuote() {
+  clearTyping();
+  currentIdx = (currentIdx + 1) % QUOTES.length;
+  document.getElementById('typed').innerHTML = '';
+  loadQuote(currentIdx);
+}
+
+function prevQuote() {
+  clearTyping();
+  currentIdx = (currentIdx - 1 + QUOTES.length) % QUOTES.length;
+  document.getElementById('typed').innerHTML = '';
+  loadQuote(currentIdx);
+}
+
+// init
+document.getElementById('date-stamp').textContent = getNow();
+loadQuote(currentIdx);
+</script>
+</body>
+</html>
