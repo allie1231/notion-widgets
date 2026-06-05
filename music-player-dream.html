@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dream Player · Itjae</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pk:#FFD4E8; --sk:#C8E4FF; --mid:#E8D4FF;
+  --text:#2C1850; --muted:#A080C0;
+  --ac:#C850A0; --ac2:#5880D0;
+  --glow:rgba(200,80,160,.3); --glow2:rgba(200,80,160,.15);
+  --card:rgba(255,255,255,.58); --cbd:rgba(255,255,255,.82);
+  --ibd:rgba(200,160,220,.22);
+}
+html,body{
+  min-height:100%; font-family:'Space Mono',monospace;
+  background:transparent;
+  display:flex; justify-content:center; align-items:flex-start;
+  padding:24px 16px;
+}
+
+.ipod{
+  width:240px; background:rgba(255,248,254,0.96);
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--cbd); border-radius:30px;
+  padding:15px 15px 20px; position:relative;
+  animation:float 5s ease-in-out infinite;
+  box-shadow:0 8px 32px rgba(200,100,160,.18),0 2px 8px rgba(200,100,160,.1);
+}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.screen{
+  background:rgba(255,255,255,.72); border:1px solid var(--ibd);
+  border-radius:10px; overflow:hidden; margin-bottom:15px; min-height:130px;
+}
+.shdr{display:flex;justify-content:space-between;align-items:center;padding:5px 9px;border-bottom:1px solid var(--ibd)}
+.slbl{font-size:8px;font-weight:700;letter-spacing:.14em;color:var(--ac)}
+.dot{width:4px;height:4px;border-radius:50%;background:var(--ac);opacity:0}
+.dot.on{animation:blink 1.2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.15}}
+.arow{display:flex;gap:9px;padding:9px;align-items:center}
+.art{
+  width:56px;height:56px;border-radius:6px;
+  background:rgba(200,160,220,.18);border:1px solid var(--ibd);
+  flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;color:var(--muted)
+}
+.art img{width:100%;height:100%;object-fit:cover}
+.info{flex:1;min-width:0}
+.ttl{
+  font-family:'Cormorant Garamond',serif;font-style:italic;font-size:12px;
+  color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  margin-bottom:4px;line-height:1.3
+}
+.tauth{font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.05em}
+.parea{padding:5px 9px 8px}
+.pbar{height:2px;background:rgba(200,160,220,.2);border-radius:1px;overflow:hidden;margin-bottom:4px;cursor:pointer}
+.pfill{height:100%;background:linear-gradient(90deg,var(--ac),var(--ac2));border-radius:1px;width:0%;transition:width .4s linear}
+.times{display:flex;justify-content:space-between;font-size:8px;color:var(--muted)}
+.wwrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.mlbl{font-size:8px;font-weight:700;letter-spacing:.14em;color:var(--muted)}
+.wheel{
+  width:128px;height:128px;border-radius:50%;
+  background:rgba(255,255,255,.78);border:1px solid var(--cbd);
+  position:relative;display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 0 20px rgba(200,160,220,.12),0 4px 16px rgba(200,100,160,.12)
+}
+.wb{position:absolute;font-size:8px;font-weight:700;color:var(--muted);cursor:pointer;user-select:none;letter-spacing:.05em;transition:color .12s}
+.wb:hover{color:var(--ac)}
+.wb-t{top:10px;left:50%;transform:translateX(-50%)}
+.wb-l{left:10px;top:50%;transform:translateY(-50%)}
+.wb-r{right:10px;top:50%;transform:translateY(-50%)}
+.wb-b{bottom:10px;left:50%;transform:translateX(-50%)}
+.cbtn{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--pk),var(--sk));
+  border:1px solid rgba(255,255,255,.9);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;box-shadow:0 2px 10px rgba(200,100,160,.25)
+}
+.cbtn:hover{box-shadow:0 4px 18px rgba(200,100,160,.38);transform:scale(1.04)}
+.cbtn:active{transform:scale(.92)}
+.cbtn svg{width:14px;height:14px;color:var(--ac)}
+.plist{display:flex;flex-direction:column;gap:3px;margin-top:11px}
+.pli{display:flex;align-items:center;gap:7px;padding:5px 7px;border:1px solid var(--ibd);border-radius:4px;cursor:pointer;transition:all .12s;background:transparent}
+.pli:hover{background:rgba(255,255,255,.4)}
+.pli.active{background:rgba(255,255,255,.55);border-color:rgba(200,100,160,.3)}
+.pln{font-size:8px;color:var(--muted);min-width:14px}
+.plt{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pld{font-size:8px;color:var(--muted);cursor:pointer;padding:0 2px;transition:color .1s}
+.pld:hover{color:var(--ac)}
+.uarea{display:none;margin-top:11px;border:1px solid var(--ibd);border-radius:6px;overflow:hidden;background:rgba(255,255,255,.4)}
+.uarea.open{display:block}
+.ulbl{font-size:8px;color:var(--muted);padding:7px 9px 3px;letter-spacing:.1em}
+.urow{display:flex}
+.uin{flex:1;background:transparent;border:none;border-top:1px solid var(--ibd);padding:6px 9px;font-size:9px;font-family:'Space Mono',monospace;color:var(--text);outline:none}
+.uin::placeholder{color:var(--muted)}
+.uadd{background:rgba(200,80,160,.1);border:none;border-top:1px solid var(--ibd);border-left:1px solid var(--ibd);padding:6px 10px;font-size:8px;font-family:'Space Mono',monospace;color:var(--ac);cursor:pointer;transition:background .12s;letter-spacing:.05em}
+.uadd:hover{background:rgba(200,80,160,.2)}
+#ywrap{position:fixed;left:-9999px;top:0;width:1px;height:1px;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="ywrap"><div id="yt-player"></div></div>
+<div class="ipod">
+  <div class="screen">
+    <div class="shdr"><span class="slbl">Now Playing</span><div class="dot" id="dot"></div></div>
+    <div class="arow">
+      <div class="art" id="art">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+      </div>
+      <div class="info">
+        <div class="ttl" id="ttl">YouTube URL을<br>추가해주세요</div>
+        <div class="tauth" id="tauth">MENU → ADD URL</div>
+      </div>
+    </div>
+    <div class="parea">
+      <div class="pbar" onclick="seekTo(event)"><div class="pfill" id="pfill"></div></div>
+      <div class="times"><span id="tcur">0:00</span><span id="trem">-0:00</span></div>
+    </div>
+  </div>
+  <div class="wwrap">
+    <div class="mlbl">MENU</div>
+    <div class="wheel">
+      <span class="wb wb-t" onclick="toggleInput()">MENU</span>
+      <span class="wb wb-l" onclick="prev()">◀◀</span>
+      <span class="wb wb-r" onclick="next()">▶▶</span>
+      <span class="wb wb-b" onclick="togglePlay()">▶ ‖</span>
+      <button class="cbtn" onclick="togglePlay()" aria-label="재생/정지">
+        <svg id="pico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="plist" id="plist"></div>
+  <div class="uarea" id="uarea">
+    <div class="ulbl">YOUTUBE URL</div>
+    <div class="urow">
+      <input class="uin" id="uin" type="text" placeholder="https://youtu.be/..."/>
+      <button class="uadd" onclick="addUrl()">ADD</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);})();
+let pl=JSON.parse(localStorage.getItem('dp_pl')||'[]'),idx=0,yt=null,ok=false,playing=false,tmr=null;
+window.onYouTubeIframeAPIReady=function(){yt=new YT.Player('yt-player',{height:'1',width:'1',playerVars:{autoplay:0,controls:0,disablekb:1,rel:0},events:{onReady:()=>{ok=true;if(pl.length)load(idx,false);},onStateChange:onSC,onError:()=>{document.getElementById('tauth').textContent='재생 불가';}}});};
+function onSC(e){const S=YT.PlayerState;if(e.data===S.PLAYING){playing=true;icon(true);document.getElementById('dot').classList.add('on');clearInterval(tmr);tmr=setInterval(tick,500);}else if(e.data===S.PAUSED){playing=false;icon(false);}else if(e.data===S.ENDED){playing=false;icon(false);document.getElementById('dot').classList.remove('on');next();}}
+function togglePlay(){if(!ok||!yt)return;if(!pl.length){toggleInput();return;}playing?yt.pauseVideo():yt.playVideo();}
+function prev(){if(!pl.length)return;idx=(idx-1+pl.length)%pl.length;load(idx,true);}
+function next(){if(!pl.length)return;idx=(idx+1)%pl.length;load(idx,true);}
+async function load(i,auto){if(!pl[i])return;const it=pl[i];idx=i;rl();document.getElementById('ttl').textContent=it.title||'...';document.getElementById('tauth').textContent=it.auth||'';const a=document.getElementById('art');a.innerHTML=it.vid?`<img src="https://img.youtube.com/vi/${it.vid}/hqdefault.jpg" alt="" onerror="this.style.display='none'">`:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>';if(ok&&yt){auto?yt.loadVideoById(it.vid):yt.cueVideoById(it.vid);}rp();}
+function seekTo(e){if(!ok||!yt||!pl.length)return;const p=e.offsetX/e.currentTarget.offsetWidth,d=yt.getDuration();if(d)yt.seekTo(d*p,true);}
+function tick(){if(!yt||!yt.getCurrentTime)return;try{const c=yt.getCurrentTime(),t=yt.getDuration();if(!t)return;document.getElementById('pfill').style.width=(c/t*100)+'%';document.getElementById('tcur').textContent=fmt(c);document.getElementById('trem').textContent='-'+fmt(t-c);}catch(e){}}
+function rp(){clearInterval(tmr);document.getElementById('pfill').style.width='0%';document.getElementById('tcur').textContent='0:00';document.getElementById('trem').textContent='-0:00';}
+function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function icon(p){document.getElementById('pico').innerHTML=p?'<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>':'<polygon points="5,3 19,12 5,21"/>';}
+function vid(url){const m=url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([^&\n?#]+)/);return m?m[1]:null;}
+async function addUrl(){const inp=document.getElementById('uin'),v=vid(inp.value.trim());if(!v){inp.style.color='#D06060';setTimeout(()=>inp.style.color='',900);return;}if(pl.some(p=>p.vid===v)){inp.value='';return;}const it={vid:v,title:'Loading...',auth:''};pl.push(it);sv();rl();inp.value='';try{const r=await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${v}`),d=await r.json();it.title=d.title||'Unknown';it.auth=d.author_name||'';}catch{it.title='Unknown';}sv();rl();if(pl.length===1)load(0,false);}
+function rl(){const el=document.getElementById('plist');if(!pl.length){el.innerHTML='';return;}el.innerHTML=pl.map((it,i)=>`<div class="pli${i===idx?' active':''}" onclick="load(${i},true)"><span class="pln">${String(i+1).padStart(2,'0')}</span><span class="plt">${esc(it.title)}</span><span class="pld" onclick="del(event,${i})">✕</span></div>`).join('');}
+function del(e,i){e.stopPropagation();if(i===idx&&playing)yt.stopVideo();pl.splice(i,1);if(idx>=pl.length)idx=Math.max(0,pl.length-1);sv();rl();pl.length?load(idx,false):(document.getElementById('ttl').textContent='YouTube URL을\n추가해주세요',document.getElementById('tauth').textContent='MENU → ADD URL',rp());}
+function sv(){localStorage.setItem('dp_pl',JSON.stringify(pl));}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toggleInput(){document.getElementById('uarea').classList.toggle('open');}
+document.getElementById('uin').addEventListener('keydown',e=>{if(e.key==='Enter')addUrl();});
+rl();
+</script>
+</body>
+</html>
