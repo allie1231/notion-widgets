@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Garden Player Widget</title>
+  <style>
+    :root {
+      --paper: #fffdf8;
+      --paper-2: #fff8ef;
+      --pink: #f8dde2;
+      --pink-strong: #f4a7b2;
+      --blue: #dcebf0;
+      --green: #dde8d2;
+      --yellow: #f7eba8;
+      --line: #4f5651;
+      --muted: #8a8b80;
+      --soft-line: rgba(79, 86, 81, 0.22);
+      --shadow: rgba(79, 86, 81, 0.08);
+      --selected: #fff0c9;
+      --selected-line: #d8b96a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f7f3ea;
+      font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Noto Sans KR", "Segoe UI", sans-serif;
+      color: var(--line);
+    }
+
+    .widget-shell {
+      width: min(390px, 100vw);
+      padding: 14px;
+    }
+
+    .widget {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      min-height: 620px;
+      padding: 30px 24px 24px;
+      border: 1.5px solid rgba(79, 86, 81, 0.62);
+      border-radius: 26px;
+      background: var(--paper);
+      box-shadow: 0 18px 40px var(--shadow);
+    }
+
+    .doodle-border {
+      pointer-events: none;
+      position: absolute;
+      inset: 10px;
+      border: 1px solid rgba(79, 86, 81, 0.18);
+      border-radius: 22px;
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .title-area {
+      padding-top: 10px;
+      margin-bottom: 22px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin-bottom: 8px;
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .title {
+      margin: 0;
+      font-family: "DM Sans", Inter, Pretendard, sans-serif;
+      font-size: 29px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: #49654f;
+    }
+
+    .subtitle {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #73776d;
+      letter-spacing: 0.06em;
+    }
+
+    .section {
+      padding: 15px 0 16px;
+      border-top: 1px dashed var(--soft-line);
+    }
+
+    .section:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .num {
+      font-size: 15px;
+      color: #d9868d;
+      letter-spacing: 0.08em;
+    }
+
+    .label {
+      font-family: "DM Sans", Inter, Pretendard, sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+    }
+
+    .helper {
+      margin: 0 0 10px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    input,
+    button {
+      font: inherit;
+    }
+
+    .input-row {
+      display: grid;
+      grid-template-columns: 1fr 74px;
+      gap: 8px;
+    }
+
+    .url-input,
+    .title-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 12px;
+      border: 1px solid rgba(79, 86, 81, 0.24);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      color: var(--line);
+      outline: none;
+    }
+
+    .url-input:focus,
+    .title-input:focus {
+      border-color: rgba(216, 185, 106, 0.85);
+      box-shadow: 0 0 0 3px rgba(247, 235, 168, 0.35);
+    }
+
+    .add-btn,
+    .play-btn,
+    .mini-btn {
+      border: 1px solid rgba(216, 151, 158, 0.65);
+      border-radius: 8px;
+      background: rgba(248, 221, 226, 0.62);
+      color: #4f5651;
+      cursor: pointer;
+      transition: transform 0.14s ease, background 0.14s ease, border-color 0.14s ease;
+    }
+
+    .add-btn:hover,
+    .play-btn:hover,
+    .mini-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(248, 221, 226, 0.86);
+    }
+
+    .player-card {
+      overflow: hidden;
+      border: 1px solid rgba(79, 86, 81, 0.2);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.66);
+    }
+
+    .cover {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: var(--paper-2);
+      overflow: hidden;
+    }
+
+    .cover img,
+    .cover iframe {
+      width: 100%;
+      height: 100%;
+      display: block;
+      border: 0;
+      object-fit: cover;
+    }
+
+    .empty-cover {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      background:
+        linear-gradient(135deg, rgba(248,221,226,0.48), transparent 36%),
+        linear-gradient(315deg, rgba(220,235,240,0.55), transparent 42%),
+        var(--paper-2);
+    }
+
+    .play-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, transparent, rgba(79,86,81,0.12));
+    }
+
+    .play-circle {
+      width: 54px;
+      height: 54px;
+      border: 1px solid rgba(79, 86, 81, 0.45);
+      border-radius: 999px;
+      background: rgba(255, 253, 248, 0.86);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 10px 26px rgba(79,86,81,0.11);
+    }
+
+    .play-triangle {
+      width: 0;
+      height: 0;
+      margin-left: 4px;
+      border-top: 9px solid transparent;
+      border-bottom: 9px solid transparent;
+      border-left: 14px solid var(--line);
+    }
+
+    .now-info {
+      padding: 13px 13px 14px;
+    }
+
+    .now-label {
+      font-size: 10px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .now-title {
+      margin-top: 6px;
+      font-size: 16px;
+      line-height: 1.35;
+      font-weight: 500;
+      color: var(--line);
+      word-break: keep-all;
+    }
+
+    .now-url {
+      margin-top: 4px;
+      font-size: 11px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .play-btn {
+      height: 38px;
+      letter-spacing: 0.04em;
+    }
+
+    .mini-btn {
+      height: 34px;
+      padding: 0 10px;
+      font-size: 12px;
+      background: rgba(255, 255, 255, 0.58);
+      border-color: rgba(79, 86, 81, 0.18);
+    }
+
+    .playlist {
+      display: grid;
+      gap: 8px;
+      max-height: 210px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .track {
+      display: grid;
+      grid-template-columns: 58px 1fr auto;
+      gap: 9px;
+      align-items: center;
+      padding: 8px;
+      border: 1px solid rgba(79, 86, 81, 0.16);
+      border-radius: 11px;
+      background: rgba(255, 255, 255, 0.54);
+      cursor: pointer;
+    }
+
+    .track:hover {
+      border-color: rgba(79, 86, 81, 0.34);
+    }
+
+    .track.active {
+      background: var(--selected);
+      border-color: var(--selected-line);
+    }
+
+    .track-thumb {
+      width: 58px;
+      aspect-ratio: 16 / 9;
+      border-radius: 7px;
+      object-fit: cover;
+      background: var(--paper-2);
+      border: 1px solid rgba(79,86,81,0.12);
+    }
+
+    .track-title {
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .track-title strong {
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+
+    .track-title span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .delete-btn {
+      width: 26px;
+      height: 26px;
+      border: 1px solid rgba(79, 86, 81, 0.16);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.6);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .status {
+      min-height: 18px;
+      margin-top: 10px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .tiny-note {
+      margin-top: 9px;
+      padding: 9px 10px;
+      border-radius: 9px;
+      background: rgba(247, 235, 168, 0.26);
+      border: 1px solid rgba(216, 185, 106, 0.22);
+      font-size: 11px;
+      line-height: 1.55;
+      color: #747064;
+    }
+
+    @media (max-width: 360px) {
+      .widget-shell { padding: 8px; }
+      .widget { padding: 26px 18px 22px; }
+      .title { font-size: 26px; }
+      .input-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="widget-shell">
+    <section class="widget" aria-label="Music Garden Player">
+      <div class="doodle-border"></div>
+
+      <div class="content">
+        <header class="title-area">
+          <div class="eyebrow">Notion widget</div>
+          <h1 class="title">Music Garden</h1>
+          <div class="subtitle">YouTube playlist player</div>
+        </header>
+
+        <section class="section">
+          <div class="section-title"><span class="num">01</span><span class="label">Add YouTube Link</span></div>
+          <p class="helper">유튜브 영상 링크를 넣으면 썸네일과 플레이어가 생성돼요.</p>
+          <div class="input-row">
+            <input class="url-input" id="urlInput" type="url" placeholder="https://youtu.be/..." />
+            <button class="add-btn" id="addBtn" type="button">Add</button>
+          </div>
+          <input class="title-input" id="titleInput" type="text" placeholder="제목을 직접 적어도 좋아요. 비워두면 YouTube Video로 저장돼요." style="margin-top:8px;" />
+        </section>
+
+        <section class="section">
+          <div class="section-title"><span class="num">02</span><span class="label">Now Playing</span></div>
+
+          <article class="player-card">
+            <div class="cover" id="coverArea">
+              <div class="empty-cover">
+                <div>
+                  링크를 추가하면<br />
+                  이곳에 썸네일이 보여요
+                </div>
+              </div>
+            </div>
+            <div class="now-info">
+              <div class="now-label">current track</div>
+              <div class="now-title" id="nowTitle">아직 선택된 음악이 없어요</div>
+              <div class="now-url" id="nowUrl">playlist is empty</div>
+              <div class="control-row">
+                <button class="play-btn" id="playBtn" type="button">Play</button>
+                <button class="play-btn" id="openBtn" type="button">Open</button>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="section">
+          <div class="section-title"><span class="num">03</span><span class="label">Playlist</span></div>
+          <p class="helper">추가한 음악은 이 브라우저에 저장됩니다. DB 연동하면 Notion에도 저장 가능해요.</p>
+          <div class="playlist" id="playlist"></div>
+          <div class="control-row">
+            <button class="mini-btn" id="clearBtn" type="button">Clear playlist</button>
+            <button class="mini-btn" id="sampleBtn" type="button">Add sample</button>
+          </div>
+          <div class="tiny-note">
+            노션 임베드에서는 유튜브 정책/브라우저 설정에 따라 자동재생이 막힐 수 있어요. 클릭 재생 방식이 가장 안정적이에요.
+          </div>
+          <div class="status" id="status">유튜브 링크를 넣어보세요.</div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "music-garden-playlist-v1";
+
+    let playlist = [];
+    let currentIndex = -1;
+    let isPlayerMode = false;
+
+    const urlInput = document.getElementById("urlInput");
+    const titleInput = document.getElementById("titleInput");
+    const addBtn = document.getElementById("addBtn");
+    const coverArea = document.getElementById("coverArea");
+    const nowTitle = document.getElementById("nowTitle");
+    const nowUrl = document.getElementById("nowUrl");
+    const playlistEl = document.getElementById("playlist");
+    const playBtn = document.getElementById("playBtn");
+    const openBtn = document.getElementById("openBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const sampleBtn = document.getElementById("sampleBtn");
+    const statusEl = document.getElementById("status");
+
+    function extractYouTubeId(url) {
+      try {
+        const trimmed = url.trim();
+
+        const shortMatch = trimmed.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+        if (shortMatch) return shortMatch[1];
+
+        const watchUrl = new URL(trimmed);
+        if (watchUrl.hostname.includes("youtube.com")) {
+          if (watchUrl.pathname === "/watch") {
+            return watchUrl.searchParams.get("v");
+          }
+
+          const embedMatch = watchUrl.pathname.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
+          if (embedMatch) return embedMatch[1];
+
+          const shortsMatch = watchUrl.pathname.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+          if (shortsMatch) return shortsMatch[1];
+        }
+      } catch (error) {
+        const idOnly = url.trim().match(/^[a-zA-Z0-9_-]{11}$/);
+        if (idOnly) return url.trim();
+      }
+
+      return null;
+    }
+
+    function getThumb(id) {
+      return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    }
+
+    function getWatchUrl(id) {
+      return `https://www.youtube.com/watch?v=${id}`;
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ playlist, currentIndex }));
+    }
+
+    function load() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (saved && Array.isArray(saved.playlist)) {
+          playlist = saved.playlist;
+          currentIndex = typeof saved.currentIndex === "number" ? saved.currentIndex : (playlist.length ? 0 : -1);
+        }
+      } catch (error) {
+        playlist = [];
+        currentIndex = -1;
+      }
+    }
+
+    function renderCover(track) {
+      if (!track) {
+        coverArea.innerHTML = `
+          <div class="empty-cover">
+            <div>
+              링크를 추가하면<br />
+              이곳에 썸네일이 보여요
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      if (isPlayerMode) {
+        coverArea.innerHTML = `
+          <iframe
+            title="YouTube player"
+            src="https://www.youtube.com/embed/${track.id}?autoplay=1&rel=0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen>
+          </iframe>
+        `;
+        return;
+      }
+
+      coverArea.innerHTML = `
+        <img src="${getThumb(track.id)}" alt="${escapeHtml(track.title)} thumbnail" />
+        <div class="play-overlay" role="button" tabindex="0" aria-label="Play video">
+          <div class="play-circle"><div class="play-triangle"></div></div>
+        </div>
+      `;
+
+      const overlay = coverArea.querySelector(".play-overlay");
+      overlay.addEventListener("click", playCurrent);
+      overlay.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          playCurrent();
+        }
+      });
+    }
+
+    function renderNow() {
+      const track = playlist[currentIndex];
+
+      if (!track) {
+        nowTitle.textContent = "아직 선택된 음악이 없어요";
+        nowUrl.textContent = "playlist is empty";
+        playBtn.textContent = "Play";
+        openBtn.disabled = true;
+        renderCover(null);
+        return;
+      }
+
+      nowTitle.textContent = track.title;
+      nowUrl.textContent = getWatchUrl(track.id);
+      playBtn.textContent = isPlayerMode ? "Show thumbnail" : "Play";
+      openBtn.disabled = false;
+      renderCover(track);
+    }
+
+    function renderPlaylist() {
+      playlistEl.innerHTML = "";
+
+      if (!playlist.length) {
+        playlistEl.innerHTML = `
+          <div class="helper" style="padding:12px 4px;text-align:center;">
+            아직 추가된 음악이 없어요.
+          </div>
+        `;
+        return;
+      }
+
+      playlist.forEach((track, index) => {
+        const item = document.createElement("div");
+        item.className = `track ${index === currentIndex ? "active" : ""}`;
+        item.innerHTML = `
+          <img class="track-thumb" src="${getThumb(track.id)}" alt="" />
+          <div class="track-title">
+            <strong>${escapeHtml(track.title)}</strong>
+            <span>${track.id}</span>
+          </div>
+          <button class="delete-btn" type="button" aria-label="Delete">×</button>
+        `;
+
+        item.addEventListener("click", () => {
+          currentIndex = index;
+          isPlayerMode = false;
+          save();
+          render();
+        });
+
+        item.querySelector(".delete-btn").addEventListener("click", (event) => {
+          event.stopPropagation();
+          playlist.splice(index, 1);
+          if (currentIndex >= playlist.length) currentIndex = playlist.length - 1;
+          if (!playlist.length) currentIndex = -1;
+          isPlayerMode = false;
+          save();
+          render();
+          statusEl.textContent = "삭제했어요.";
+        });
+
+        playlistEl.appendChild(item);
+      });
+    }
+
+    function render() {
+      renderNow();
+      renderPlaylist();
+    }
+
+    function addTrack(url, customTitle) {
+      const id = extractYouTubeId(url);
+      if (!id) {
+        statusEl.textContent = "유튜브 링크를 다시 확인해주세요.";
+        return;
+      }
+
+      const exists = playlist.some(track => track.id === id);
+      if (exists) {
+        statusEl.textContent = "이미 추가된 링크예요.";
+        return;
+      }
+
+      const track = {
+        id,
+        title: customTitle.trim() || "YouTube Video",
+        addedAt: new Date().toISOString()
+      };
+
+      playlist.push(track);
+      currentIndex = playlist.length - 1;
+      isPlayerMode = false;
+      save();
+      render();
+
+      urlInput.value = "";
+      titleInput.value = "";
+      statusEl.textContent = "플레이리스트에 추가했어요.";
+    }
+
+    function playCurrent() {
+      if (currentIndex < 0) {
+        statusEl.textContent = "먼저 음악을 추가해주세요.";
+        return;
+      }
+      isPlayerMode = !isPlayerMode;
+      renderNow();
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    addBtn.addEventListener("click", () => addTrack(urlInput.value, titleInput.value));
+
+    urlInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        addTrack(urlInput.value, titleInput.value);
+      }
+    });
+
+    playBtn.addEventListener("click", playCurrent);
+
+    openBtn.addEventListener("click", () => {
+      const track = playlist[currentIndex];
+      if (!track) return;
+      window.open(getWatchUrl(track.id), "_blank", "noopener,noreferrer");
+    });
+
+    clearBtn.addEventListener("click", () => {
+      playlist = [];
+      currentIndex = -1;
+      isPlayerMode = false;
+      save();
+      render();
+      statusEl.textContent = "플레이리스트를 비웠어요.";
+    });
+
+    sampleBtn.addEventListener("click", () => {
+      addTrack("https://youtu.be/jfKfPfyJRdk", "lofi hip hop radio");
+    });
+
+    load();
+    render();
+  </script>
+</body>
+</html>

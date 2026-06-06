@@ -1,0 +1,63 @@
+<!DOCTYPE html><html lang="ko"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weekly Habit</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:transparent;display:flex;justify-content:center;align-items:flex-start;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+.win{border-radius:12px;border:.5px solid rgba(0,0,0,.12);background:#fff;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05)}
+.tb{background:#EBEBEB;padding:8px 12px 7px;display:flex;align-items:center;border-bottom:.5px solid rgba(0,0,0,.1)}
+.tls{display:flex;gap:5px}.tl{width:11px;height:11px;border-radius:50%}
+.wt{flex:1;font-size:12px;font-weight:500;color:#3C3C3C;text-align:center}.sp{width:42px}
+.win{width:316px}
+.grid{padding:8px 12px 4px}
+.gh-row{display:grid;grid-template-columns:90px repeat(7,1fr);margin-bottom:3px}
+.gh{font-size:10px;color:#8E8E93;text-align:center;padding:2px 0;font-weight:500}
+.gh.today{color:#007AFF;font-weight:600}
+.gh:first-child{text-align:left;color:#636366;font-weight:500}
+.hrow{display:grid;grid-template-columns:90px repeat(7,1fr);align-items:center;padding:2px 0;border-bottom:.5px solid rgba(0,0,0,.05)}
+.hrow:last-child{border-bottom:none}
+.hname{font-size:11px;color:#1C1C1E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px;cursor:pointer}
+.hname:hover{color:#FF6B8A}
+.cell{display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;transition:transform .1s;padding:3px 0;color:#D1D1D6;user-select:none}
+.cell:hover{transform:scale(1.15)}
+.cell.on{color:#FF6B8A}
+.cell.tc{background:rgba(0,122,255,.04);border-radius:4px}
+.foot{padding:7px 12px 9px;border-top:.5px solid rgba(0,0,0,.07);display:flex;justify-content:space-between;align-items:center}
+.fst{font-size:11px;color:#636366}.fst strong{color:#1C1C1E;font-weight:500}
+.add-btn{background:#007AFF;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit;font-weight:500}
+.add-btn:hover{background:#0062CC}
+.st{font-size:9px;padding:2px 7px;border-radius:3px;background:#F2F2F7;color:#8E8E93}
+.st.live{background:#E8F8E8;color:#28A745}
+</style></head><body>
+<div class="win">
+  <div class="tb"><div class="tls"><div class="tl" style="background:#FF5F57"></div><div class="tl" style="background:#FFBD2E"></div><div class="tl" style="background:#28C840"></div></div><div class="wt">Weekly Habit</div><div class="sp" style="display:flex;justify-content:flex-end;align-items:center;gap:6px"><span class="st" id="st">local</span><button class="add-btn" onclick="addHabit()">+ Add</button></div></div>
+  <div class="grid">
+    <div class="gh-row" id="ghead"></div>
+    <div id="rows"></div>
+  </div>
+  <div class="foot"><div class="fst"><strong id="tc">0</strong> checked today &middot; week <strong id="wc">0</strong>/<strong id="wt2">0</strong></div></div>
+</div>
+<script>
+const WORKER_URL='';
+const DAYS=['Mo','Tu','We','Th','Fr','Sa','Su'];
+let habits=JSON.parse(localStorage.getItem('hb_h')||'["아침 스트레칭","독서","물 2L"]');
+let checks=JSON.parse(localStorage.getItem('hb_c')||'{}');
+function wstart(){const n=new Date(),d=n.getDay();n.setDate(n.getDate()-(d===0?6:d-1));n.setHours(0,0,0,0);return n;}
+function wdays(){const s=wstart();return Array.from({length:7},(_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return d.toISOString().slice(0,10);});}
+const WD=wdays(),TODAY=new Date().toISOString().slice(0,10);
+const ck=(d,h)=>`${d}__${h}`;
+function render(){
+  document.getElementById('ghead').innerHTML=`<div class="gh">habit</div>${DAYS.map((d,i)=>`<div class="gh${WD[i]===TODAY?' today':''}">${d}</div>`).join('')}`;
+  const rows=document.getElementById('rows');
+  if(!habits.length){rows.innerHTML='<div style="text-align:center;padding:16px 0;font-size:12px;color:#C7C7CC">+ Add로 습관을 추가하세요</div>';updateFoot();return;}
+  rows.innerHTML=habits.map((h,hi)=>`<div class="hrow"><div class="hname" onclick="rmH(${hi})" title="두 번 탭하면 삭제">${esc(h)}</div>${WD.map((d,di)=>`<div class="cell${checks[ck(d,h)]?' on':''}${d===TODAY?' tc':''}" onclick="tog('${d}','${h.replace(/'/g,"\\'")}')">${checks[ck(d,h)]?'&#x2665;':'&#x2661;'}</div>`).join('')}</div>`).join('');
+  updateFoot();
+}
+function tog(date,habit){const k=ck(date,habit);checks[k]=!checks[k];if(!checks[k])delete checks[k];localStorage.setItem('hb_c',JSON.stringify(checks));render();if(WORKER_URL)fetch(WORKER_URL+'/habit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,habit,checked:!!checks[k]})}).catch(e=>console.warn(e));}
+function updateFoot(){const tc=habits.filter(h=>checks[ck(TODAY,h)]).length;const wc=Object.keys(checks).filter(k=>WD.some(d=>k.startsWith(d+'__'))).length;document.getElementById('tc').textContent=tc;document.getElementById('wc').textContent=wc;document.getElementById('wt2').textContent=habits.length*7;}
+function addHabit(){const n=prompt('새 습관 이름:');if(n?.trim()){habits.push(n.trim());localStorage.setItem('hb_h',JSON.stringify(habits));render();}}
+let rmT=null;function rmH(i){if(rmT){clearTimeout(rmT);rmT=null;if(confirm(`"${habits[i]}" 삭제할까요?`)){habits.splice(i,1);localStorage.setItem('hb_h',JSON.stringify(habits));render();}}else{rmT=setTimeout(()=>rmT=null,400);}}
+async function pull(){if(!WORKER_URL)return;try{const r=await fetch(WORKER_URL+'/habit'),d=await r.json();if(d.checks){checks={...d.checks,...checks};localStorage.setItem('hb_c',JSON.stringify(checks));render();const s=document.getElementById('st');s.textContent='live';s.classList.add('live');}}catch(e){console.warn(e);}}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+render();pull();
+</script></body></html>

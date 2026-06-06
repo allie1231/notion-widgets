@@ -1,0 +1,97 @@
+<!DOCTYPE html><html lang="ko"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Music Player</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:transparent;display:flex;justify-content:center;align-items:flex-start;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+.win{border-radius:12px;border:.5px solid rgba(0,0,0,.12);background:#fff;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05)}
+.tb{background:#EBEBEB;padding:8px 12px 7px;display:flex;align-items:center;border-bottom:.5px solid rgba(0,0,0,.1)}
+.tls{display:flex;gap:5px}.tl{width:11px;height:11px;border-radius:50%}
+.wt{flex:1;font-size:12px;font-weight:500;color:#3C3C3C;text-align:center}.sp{width:42px}
+.win{width:280px}
+.screen{padding:12px 14px 8px;border-bottom:.5px solid rgba(0,0,0,.07);display:flex;gap:10px;align-items:center}
+.art{width:52px;height:52px;border-radius:6px;background:#F2F2F7;border:.5px solid rgba(0,0,0,.08);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#C7C7CC;font-size:20px}
+.art img{width:100%;height:100%;object-fit:cover}
+.info{flex:1;min-width:0}
+.title{font-size:13px;font-weight:500;color:#1C1C1E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.artist{font-size:11px;color:#8E8E93;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prog-area{margin-top:8px}
+.pbar{height:2px;background:#E5E5EA;border-radius:1px;overflow:hidden;cursor:pointer}
+.pfill{height:100%;background:#FF6B8A;border-radius:1px;width:0%;transition:width .4s linear}
+.times{display:flex;justify-content:space-between;margin-top:3px;font-size:9px;color:#C7C7CC}
+.ctrls{display:flex;justify-content:center;align-items:center;gap:20px;padding:10px 0 12px;border-bottom:.5px solid rgba(0,0,0,.07)}
+.cbtn{background:none;border:none;cursor:pointer;color:#1C1C1E;font-size:18px;padding:2px 4px;line-height:1;transition:opacity .12s}
+.cbtn:hover{opacity:.6}
+.cbtn.play{font-size:24px}
+.dot{width:5px;height:5px;border-radius:50%;background:#FF6B8A;opacity:0;margin-left:4px}
+.dot.on{animation:blink 1s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+.plist{max-height:100px;overflow-y:auto}
+.plist::-webkit-scrollbar{width:3px}.plist::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:2px}
+.pli{display:flex;align-items:center;gap:8px;padding:6px 12px;border-bottom:.5px solid rgba(0,0,0,.06);cursor:pointer}
+.pli:last-child{border-bottom:none}
+.pli:hover{background:#F9F9F9}
+.pli.active{background:#FFF0F4}
+.pln{font-size:9px;color:#C7C7CC;min-width:16px}
+.plt{font-size:11px;color:#1C1C1E;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pli.active .plt{color:#FF6B8A;font-weight:500}
+.pld{font-size:10px;color:#C7C7CC;cursor:pointer;padding:0 2px}
+.pld:hover{color:#FF3B30}
+.url-area{display:none;border-top:.5px solid rgba(0,0,0,.08)}
+.url-area.open{display:flex}
+.url-in{flex:1;background:transparent;border:none;padding:8px 12px;font-size:11px;color:#1C1C1E;outline:none;font-family:inherit}
+.url-in::placeholder{color:#C7C7CC}
+.url-add{background:#007AFF;color:#fff;border:none;padding:8px 14px;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;border-left:.5px solid rgba(0,0,0,.08)}
+.url-add:hover{background:#0062CC}
+.menu-btn{background:none;border:none;cursor:pointer;color:#8E8E93;font-size:11px;font-family:inherit;padding:2px 6px}
+.menu-btn:hover{color:#007AFF}
+</style></head><body>
+<div id="ywrap" style="position:fixed;left:-9999px;top:0;width:1px;height:1px;pointer-events:none"><div id="yt-player"></div></div>
+<div class="win">
+  <div class="tb"><div class="tls"><div class="tl" style="background:#FF5F57"></div><div class="tl" style="background:#FFBD2E"></div><div class="tl" style="background:#28C840"></div></div><div class="wt" style="display:flex;align-items:center;justify-content:center;gap:4px">Now Playing<div class="dot" id="dot"></div></div><div class="sp" style="display:flex;justify-content:flex-end;align-items:center"><button class="menu-btn" onclick="toggleInput()">+ URL</button></div></div>
+  <div class="screen">
+    <div class="art" id="art">&#9835;</div>
+    <div class="info">
+      <div class="title" id="title">유튜브 URL을 추가하세요</div>
+      <div class="artist" id="artist">+ URL 버튼을 눌러주세요</div>
+      <div class="prog-area">
+        <div class="pbar" onclick="seekTo(event)"><div class="pfill" id="pfill"></div></div>
+        <div class="times"><span id="tcur">0:00</span><span id="trem">-0:00</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="ctrls">
+    <button class="cbtn" onclick="prev()">&#9664;&#9664;</button>
+    <button class="cbtn play" onclick="togglePlay()" id="playbtn">&#9654;</button>
+    <button class="cbtn" onclick="next()">&#9654;&#9654;</button>
+  </div>
+  <div class="plist" id="plist"></div>
+  <div class="url-area" id="url-area">
+    <input class="url-in" id="url-in" type="text" placeholder="https://youtu.be/..." />
+    <button class="url-add" onclick="addUrl()">Add</button>
+  </div>
+</div>
+<script>
+(function(){const s=document.createElement('script');s.src='https://www.youtube.com/iframe_api';document.head.appendChild(s);})();
+let pl=JSON.parse(localStorage.getItem('mp_pl')||'[]'),idx=0,yt=null,ok=false,playing=false,tmr=null;
+window.onYouTubeIframeAPIReady=function(){yt=new YT.Player('yt-player',{height:'1',width:'1',playerVars:{autoplay:0,controls:0,disablekb:1,rel:0},events:{onReady:()=>{ok=true;if(pl.length)load(idx,false);},onStateChange:onSC,onError:()=>document.getElementById('artist').textContent='재생 불가 (제한된 영상)'}}); };
+function onSC(e){const S=YT.PlayerState;if(e.data===S.PLAYING){playing=true;setIcon(true);document.getElementById('dot').classList.add('on');clearInterval(tmr);tmr=setInterval(tick,500);}else if(e.data===S.PAUSED){playing=false;setIcon(false);}else if(e.data===S.ENDED){playing=false;setIcon(false);document.getElementById('dot').classList.remove('on');next();}}
+function togglePlay(){if(!ok||!yt)return;if(!pl.length){toggleInput();return;}playing?yt.pauseVideo():yt.playVideo();}
+function prev(){if(!pl.length)return;idx=(idx-1+pl.length)%pl.length;load(idx,true);}
+function next(){if(!pl.length)return;idx=(idx+1)%pl.length;load(idx,true);}
+async function load(i,auto){if(!pl[i])return;const it=pl[i];idx=i;rl();document.getElementById('title').textContent=it.title||'...';document.getElementById('artist').textContent=it.auth||'';const a=document.getElementById('art');a.innerHTML=it.vid?`<img src="https://img.youtube.com/vi/${it.vid}/hqdefault.jpg" alt="" onerror="this.style.display='none'">`:'&#9835;';if(ok&&yt){auto?yt.loadVideoById(it.vid):yt.cueVideoById(it.vid);}rp();}
+function seekTo(e){if(!ok||!yt||!pl.length)return;const p=e.offsetX/e.currentTarget.offsetWidth,d=yt.getDuration();if(d)yt.seekTo(d*p,true);}
+function tick(){if(!yt||!yt.getCurrentTime)return;try{const c=yt.getCurrentTime(),t=yt.getDuration();if(!t)return;document.getElementById('pfill').style.width=(c/t*100)+'%';document.getElementById('tcur').textContent=fmt(c);document.getElementById('trem').textContent='-'+fmt(t-c);}catch(e){}}
+function rp(){clearInterval(tmr);document.getElementById('pfill').style.width='0%';document.getElementById('tcur').textContent='0:00';document.getElementById('trem').textContent='-0:00';}
+function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function setIcon(p){document.getElementById('playbtn').innerHTML=p?'&#9646;&#9646;':'&#9654;';}
+function getVid(url){const m=url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([^&\n?#]+)/);return m?m[1]:null;}
+async function addUrl(){const inp=document.getElementById('url-in');const vid=getVid(inp.value.trim());if(!vid){inp.style.color='#FF3B30';setTimeout(()=>inp.style.color='',800);return;}if(pl.some(p=>p.vid===vid)){inp.value='';return;}const it={vid,title:'Loading...',auth:''};pl.push(it);sv();rl();inp.value='';document.getElementById('url-area').classList.remove('open');try{const r=await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${vid}`),d=await r.json();it.title=d.title||'Unknown';it.auth=d.author_name||'';}catch{it.title='Unknown';}sv();rl();if(pl.length===1)load(0,false);}
+function rl(){const el=document.getElementById('plist');if(!pl.length){el.innerHTML='';return;}el.innerHTML=pl.map((it,i)=>`<div class="pli${i===idx?' active':''}" onclick="load(${i},true)"><span class="pln">${String(i+1).padStart(2,'0')}</span><span class="plt">${esc(it.title)}</span><span class="pld" onclick="del(event,${i})">&#10005;</span></div>`).join('');}
+function del(e,i){e.stopPropagation();if(i===idx&&playing)yt.stopVideo();pl.splice(i,1);if(idx>=pl.length)idx=Math.max(0,pl.length-1);sv();rl();pl.length?load(idx,false):(document.getElementById('title').textContent='유튜브 URL을 추가하세요',document.getElementById('artist').textContent='+ URL 버튼을 눌러주세요',document.getElementById('art').innerHTML='&#9835;',rp());}
+function sv(){localStorage.setItem('mp_pl',JSON.stringify(pl));}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toggleInput(){document.getElementById('url-area').classList.toggle('open');}
+document.getElementById('url-in').addEventListener('keydown',e=>{if(e.key==='Enter')addUrl();});
+rl();
+</script></body></html>

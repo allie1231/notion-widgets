@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iPod Playlist Widget</title>
+  <style>
+    :root {
+      --body: #EEEFE8;
+      --body-edge: #D8D9D2;
+      --screen-black: #111316;
+      --screen-blue: #9DB9C8;
+      --screen-blue-deep: #6F95A9;
+      --white: #F7F7F2;
+      --control: #F2F2EE;
+      --control-line: #D4D5CF;
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.62);
+      --icon: rgba(92,96,99,.54);
+      --shadow: rgba(44,48,52,.20);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      font-family: "Helvetica Neue", Arial, system-ui, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .wrap {
+      width: min(540px, 92vw);
+      background: transparent;
+    }
+
+    .ipod {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1.16 / 1;
+      border-radius: 44px;
+      background:
+        radial-gradient(circle at 50% 48%, rgba(255,255,255,.82) 0 18%, transparent 30%),
+        linear-gradient(145deg, #F6F6F2 0%, var(--body) 46%, #D7D8D1 100%);
+      box-shadow:
+        0 18px 28px var(--shadow),
+        inset 0 4px 9px rgba(255,255,255,.86),
+        inset 0 -18px 24px rgba(80,85,88,.14);
+      border: 1px solid rgba(92,96,99,.14);
+      padding: 30px 30px 28px;
+    }
+
+    .ipod::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        repeating-linear-gradient(
+          0deg,
+          rgba(0,0,0,.018) 0,
+          rgba(0,0,0,.018) 1px,
+          transparent 1px,
+          transparent 4px
+        );
+      pointer-events: none;
+      opacity: .55;
+      mix-blend-mode: multiply;
+    }
+
+    .screen-frame {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 53%;
+      border-radius: 9px;
+      background: var(--screen-black);
+      padding: 10px;
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.08),
+        0 2px 3px rgba(0,0,0,.16);
+    }
+
+    .screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 3px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(255,255,255,.43) 0%, rgba(255,255,255,.18) 26%, transparent 44%),
+        linear-gradient(135deg, #C4D8E0 0%, var(--screen-blue) 42%, var(--screen-blue-deep) 100%);
+    }
+
+    .screen::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 18% 24%, rgba(255,255,255,.16), transparent 28%),
+        repeating-linear-gradient(
+          0deg,
+          rgba(255,255,255,.05) 0,
+          rgba(255,255,255,.05) 1px,
+          transparent 1px,
+          transparent 3px
+        );
+      pointer-events: none;
+    }
+
+    .video {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: 16px;
+      height: 66%;
+      border-radius: 7px;
+      overflow: hidden;
+      background: rgba(255,255,255,.35);
+      box-shadow: 0 5px 12px rgba(0,0,0,.14);
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: #000;
+    }
+
+    .meta {
+      display: none;
+    }
+
+    .title {
+      width: 74%;
+      height: 25px;
+      border-radius: 2px;
+      background: rgba(255,255,255,.86);
+      margin-bottom: 20px;
+    }
+
+    .artist {
+      width: 36%;
+      height: 17px;
+      border-radius: 2px;
+      background: rgba(255,255,255,.72);
+    }
+
+    .timeline {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 13px;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 47px 1fr 47px;
+      gap: 11px;
+      align-items: center;
+      color: var(--text);
+      font-size: 16px;
+      letter-spacing: .08em;
+      font-weight: 300;
+    }
+
+    .bar {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(45,67,78,.42);
+      overflow: hidden;
+    }
+
+    .bar span {
+      display: block;
+      width: 38%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--white);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(17,19,22,.32);
+      backdrop-filter: blur(3px);
+    }
+
+    .overlay.open {
+      display: flex;
+    }
+
+    .panel {
+      width: min(420px, 92%);
+      border-radius: 9px;
+      background: rgba(247,247,242,.96);
+      padding: 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.22);
+    }
+
+    .form {
+      display: flex;
+      gap: 8px;
+    }
+
+    input {
+      width: 100%;
+      min-width: 0;
+      height: 34px;
+      border: 1px solid rgba(80,85,88,.24);
+      border-radius: 4px;
+      background: #FFFFFF;
+      color: #303438;
+      padding: 0 10px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    input::placeholder {
+      color: rgba(48,52,56,.38);
+    }
+
+    button {
+      height: 34px;
+      border: 1px solid rgba(80,85,88,.24);
+      border-radius: 4px;
+      background: #303438;
+      color: #F7F7F2;
+      padding: 0 13px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      cursor: pointer;
+    }
+
+    .wheel {
+      position: relative;
+      z-index: 2;
+      width: 196px;
+      height: 196px;
+      margin: 25px auto 0;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, var(--body) 0 30%, transparent 31%),
+        var(--control);
+      border: 1px solid var(--control-line);
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,.8),
+        inset 0 -5px 10px rgba(80,85,88,.08);
+    }
+
+    .center {
+      position: absolute;
+      inset: 61px;
+      border-radius: 50%;
+      background:
+        linear-gradient(145deg, #F5F5F1, #E7E8E2);
+      border: 1px solid var(--control-line);
+      box-shadow:
+        inset 0 2px 3px rgba(255,255,255,.68),
+        inset 0 -3px 5px rgba(80,85,88,.08);
+    }
+
+    .control {
+      position: absolute;
+      color: var(--icon);
+      border: 0;
+      background: transparent;
+      padding: 0;
+      height: auto;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: none;
+    }
+
+    .music {
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 17px;
+      font-weight: 400;
+      letter-spacing: .1em;
+      color: rgba(92,96,99,.48);
+    }
+
+    .prev {
+      left: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 24px;
+    }
+
+    .next {
+      right: 28px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 24px;
+    }
+
+    .play {
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%);
+      font-size: 25px;
+      letter-spacing: -4px;
+    }
+
+    @media (max-width: 560px) {
+      .ipod {
+        border-radius: 34px;
+        padding: 25px 24px 26px;
+      }
+
+      .screen-frame {
+        height: 51%;
+      }
+
+      .timeline {
+        grid-template-columns: 39px 1fr 39px;
+        gap: 8px;
+        font-size: 14px;
+      }
+
+      .bar {
+        height: 12px;
+      }
+
+      .title {
+        height: 19px;
+        margin-bottom: 14px;
+      }
+
+      .artist {
+        height: 13px;
+      }
+
+      .wheel {
+        width: 178px;
+        height: 178px;
+        margin-top: 25px;
+      }
+
+      .center {
+        inset: 55px;
+      }
+
+      .music {
+        top: 18px;
+        font-size: 13px;
+      }
+
+      .prev {
+        left: 25px;
+        font-size: 20px;
+      }
+
+      .next {
+        right: 25px;
+        font-size: 20px;
+      }
+
+      .play {
+        bottom: 20px;
+        font-size: 21px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      body {
+        padding: 12px;
+      }
+
+      .video {
+        left: 12px;
+        right: 12px;
+        top: 13px;
+        width: auto;
+        height: 65%;
+      }
+
+      .meta {
+        left: 53%;
+        top: 20px;
+        right: 13px;
+      }
+
+      .timeline {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="ipod" aria-label="iPod playlist widget">
+      <div class="screen-frame">
+        <div class="screen">
+          <div class="video">
+            <iframe
+              id="ytFrame"
+              src="https://www.youtube.com/embed/videoseries?list="
+              title="YouTube playlist"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen>
+            </iframe>
+          </div>
+
+          <div class="meta" aria-hidden="true">
+            <div class="title"></div>
+            <div class="artist"></div>
+          </div>
+
+          <div class="timeline" aria-hidden="true">
+            <span>1:57</span>
+            <div class="bar"><span></span></div>
+            <span>3:58</span>
+          </div>
+
+          <div class="overlay" id="overlay">
+            <div class="panel">
+              <form class="form" id="urlForm">
+                <input id="playlistUrl" type="url" placeholder="YouTube playlist URL" autocomplete="off" />
+                <button type="submit">PLAY</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wheel" aria-hidden="false">
+        <button type="button" class="control music" id="musicBtn" aria-label="Open playlist input">MUSIC</button>
+        <span class="control prev" aria-hidden="true">◀</span>
+        <span class="control next" aria-hidden="true">▶</span>
+        <span class="control play" aria-hidden="true">▶Ⅱ</span>
+        <div class="center"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("urlForm");
+    const input = document.getElementById("playlistUrl");
+    const frame = document.getElementById("ytFrame");
+    const musicBtn = document.getElementById("musicBtn");
+    const overlay = document.getElementById("overlay");
+
+    function getPlaylistId(value) {
+      const raw = value.trim();
+      if (!raw) return "";
+
+      if (/^(PL|OLAK5uy_|RD|UU|LL)/.test(raw)) {
+        return raw;
+      }
+
+      try {
+        const url = new URL(raw);
+        const list = url.searchParams.get("list");
+        if (list) return list;
+      } catch {}
+
+      const match = raw.match(/list=([^&]+)/);
+      return match ? match[1] : raw;
+    }
+
+    function playPlaylist(value) {
+      const playlistId = getPlaylistId(value);
+      if (!playlistId) return;
+
+      frame.src = "https://www.youtube.com/embed/videoseries?list=" + encodeURIComponent(playlistId);
+      localStorage.setItem("cleanIpodPlaylist", value);
+      overlay.classList.remove("open");
+    }
+
+    musicBtn.addEventListener("click", function() {
+      overlay.classList.add("open");
+      setTimeout(() => input.focus(), 80);
+    });
+
+    overlay.addEventListener("click", function(event) {
+      if (event.target === overlay) {
+        overlay.classList.remove("open");
+      }
+    });
+
+    form.addEventListener("submit", function(event) {
+      event.preventDefault();
+      playPlaylist(input.value);
+    });
+
+    const saved = localStorage.getItem("cleanIpodPlaylist");
+    if (saved) {
+      input.value = saved;
+      playPlaylist(saved);
+    }
+  </script>
+</body>
+</html>

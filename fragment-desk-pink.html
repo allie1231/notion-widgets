@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fragment Desk · pink</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --theme:  #FFD6EC;
+  --accent: #E868AA;
+  --text:   #3A1830;
+  --m:      #C888AA;
+  --bd:     rgba(232,104,170,.18);
+}
+html,body{min-height:100%;background:transparent;display:flex;justify-content:center;align-items:flex-start;padding:16px;font-family:'Space Mono','Noto Sans KR',monospace;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.04'/%3E%3C/svg%3E");background-size:200px;}
+
+/* WIDGET */
+.fd{width:288px;background:#fff;border:1px solid var(--bd);border-radius:20px;box-shadow:0 5px 24px rgba(0,0,0,.07),0 1px 4px rgba(0,0,0,.04);overflow:hidden;animation:float 6s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+
+/* HEADER — 테마 단색 */
+.hdr{background:var(--theme);padding:10px 14px 9px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid rgba(255,255,255,.5);}
+.hdr-l{display:flex;flex-direction:column;gap:2px}
+.title{font-size:9px;font-weight:700;color:var(--text);letter-spacing:.2em}
+.sub{font-size:7px;color:var(--m);letter-spacing:.1em}
+.hdr-r{text-align:right}
+.hdr-date{font-size:9px;font-weight:700;color:var(--accent);letter-spacing:.06em}
+.hdr-time{font-size:7px;color:var(--m);margin-top:2px}
+
+/* ROOM SECTION — 흰색 */
+.room-sec{background:#fff;padding:12px 14px 10px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--bd);}
+.door{width:54px;height:68px;flex-shrink:0;border:1.5px solid var(--bd);border-radius:27px 27px 3px 3px;background:var(--theme);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:transform .18s;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.door:hover{transform:scale(1.07)}
+.door:active{transform:scale(.95)}
+.door-lbl{font-size:5.5px;font-weight:700;color:var(--accent);letter-spacing:.1em;text-align:center;line-height:1.5}
+.door-num{font-size:15px;font-weight:700;color:var(--text);line-height:1}
+.door-knob{width:4px;height:4px;border-radius:50%;background:var(--accent);position:absolute;bottom:9px;right:9px;}
+.room-info{flex:1}
+.room-hint{font-size:6.5px;color:var(--m);letter-spacing:.14em;margin-bottom:4px}
+.room-name{font-size:11px;font-weight:400;color:var(--text);line-height:1.4;font-family:'Noto Sans KR',sans-serif;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--bd)}
+.tab{flex:1;padding:6px 0;text-align:center;font-size:6.5px;font-weight:700;color:var(--m);letter-spacing:.1em;cursor:pointer;border-bottom:2px solid transparent;transition:all .12s;}
+.tab:hover{color:var(--text)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* QUESTION */
+.q-sec{padding:11px 14px 8px}
+.q-label{font-size:6.5px;font-weight:700;color:var(--accent);letter-spacing:.2em;margin-bottom:7px}
+.q-txt{font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:400;color:var(--text);line-height:1.8;word-break:keep-all;min-height:34px;transition:opacity .22s;}
+
+/* MEMO */
+.memo-sec{padding:7px 14px 9px;border-top:1px solid var(--bd);display:flex;gap:7px;}
+.memo-in{flex:1;background:rgba(255,255,255,.8);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;font-size:10px;color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;transition:border-color .12s;}
+.memo-in::placeholder{color:var(--m);opacity:.6}
+.memo-in:focus{border-color:var(--accent)}
+.save-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:7px;font-weight:700;letter-spacing:.12em;cursor:pointer;font-family:'Space Mono',monospace;transition:all .15s;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,.1);}
+.save-btn:hover{filter:brightness(.92)}
+.save-btn:active{transform:scale(.95)}
+
+/* FRAGMENTS */
+.frags{padding:4px 14px;max-height:80px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;}
+.frags:empty{display:none}
+.frags:not(:empty){padding-bottom:7px;border-top:1px solid var(--bd)}
+.frags::-webkit-scrollbar{width:2px}
+.frags::-webkit-scrollbar-thumb{background:var(--bd);border-radius:1px}
+.frag{display:flex;gap:5px;align-items:flex-start}
+.fcat{font-size:5.5px;font-weight:700;letter-spacing:.08em;padding:2px 5px;border-radius:5px;flex-shrink:0;margin-top:2px;background:var(--theme);color:var(--accent);}
+.ftxt{font-family:'Noto Sans KR',sans-serif;font-size:10px;color:var(--text);flex:1;line-height:1.55}
+.fdel{margin-left:auto;font-size:10px;color:var(--bd);cursor:pointer;background:none;border:none;flex-shrink:0;transition:color .1s;padding:0;}
+.fdel:hover{color:var(--accent)}
+
+/* BOTTOM */
+.bottom{border-top:1px solid var(--bd);padding:8px 14px 11px;display:flex;justify-content:space-between;align-items:center;}
+.stat{font-size:7px;color:var(--m);letter-spacing:.06em}
+.stat strong{color:var(--accent);font-weight:700}
+.btns{display:flex;gap:4px}
+.abtn{font-size:6.5px;font-weight:700;letter-spacing:.1em;padding:4px 10px;border-radius:8px;cursor:pointer;font-family:'Space Mono',monospace;transition:all .12s;border:none;}
+.abtn-arc{background:#fff;border:1px solid var(--bd);color:var(--m);}
+.abtn-arc:hover{border-color:var(--accent);color:var(--accent)}
+.abtn-shf{background:var(--theme);color:var(--accent);border:1px solid var(--bd);}
+.abtn-shf:hover{filter:brightness(.96)}
+
+/* SETTINGS */
+.settings{border-top:1px solid var(--bd);background:var(--theme);padding:8px 14px 10px;display:none;flex-direction:column;gap:5px;}
+.settings.open{display:flex}
+.srow{display:flex;gap:6px;align-items:center}
+.slbl{font-size:6.5px;color:var(--m);min-width:62px;letter-spacing:.08em}
+.sin{flex:1;background:#fff;border:1px solid var(--bd);border-radius:6px;padding:3px 8px;font-size:8px;color:var(--text);outline:none;font-family:inherit;}
+.sbtn{background:var(--accent);color:#fff;border:none;border-radius:6px;padding:3px 9px;font-size:7px;font-weight:700;cursor:pointer;font-family:inherit;}
+</style>
+</head>
+<body>
+<div class="fd">
+  <div class="hdr">
+    <div class="hdr-l"><span class="title">FRAGMENT DESK</span><span class="sub">a tiny archive for today</span></div>
+    <div class="hdr-r"><div class="hdr-date" id="hdr-date"></div><div class="hdr-time" id="hdr-time"></div></div>
+  </div>
+  <div class="room-sec">
+    <div class="door" onclick="nextMode()">
+      <div class="door-lbl" id="door-lbl">DESIGN<br>ROOM</div>
+      <div class="door-num" id="door-num">01</div>
+      <div class="door-knob"></div>
+    </div>
+    <div class="room-info">
+      <div class="room-hint">TODAY'S ROOM</div>
+      <div class="room-name" id="room-name">디자인 작업실</div>
+    </div>
+  </div>
+  <div class="tabs" id="tabs">
+    <div class="tab on" data-m="D" onclick="setMode(this)">Design</div>
+    <div class="tab"    data-m="R" onclick="setMode(this)">Reading</div>
+    <div class="tab"    data-m="I" onclick="setMode(this)">Idea</div>
+    <div class="tab"    data-m="W" onclick="setMode(this)">Writing</div>
+  </div>
+  <div class="q-sec">
+    <div class="q-label">TODAY'S QUESTION</div>
+    <div class="q-txt" id="q-txt">오늘 내 눈에 걸린 것은?</div>
+  </div>
+  <div class="memo-sec">
+    <input class="memo-in" id="memo-in" type="text" placeholder="one line fragment ..." maxlength="120"/>
+    <button class="save-btn" id="save-btn" onclick="saveFrag()">SAVE</button>
+  </div>
+  <div class="frags" id="frags"></div>
+  <div class="bottom">
+    <div class="stat"><strong id="fcnt">0</strong> fragments today</div>
+    <div class="btns">
+      <button class="abtn abtn-arc" onclick="openArchive()">ARCHIVE</button>
+      <button class="abtn abtn-shf" onclick="shuffle()">SHUFFLE</button>
+    </div>
+  </div>
+  <div class="settings" id="settings">
+    <div class="srow"><span class="slbl">Archive URL</span><input class="sin" id="sin-arc" type="text" placeholder="Notion 페이지 URL"/></div>
+    <div class="srow"><span class="slbl">Worker URL</span><input class="sin" id="sin-wk" type="text" placeholder="https://..."/><button class="sbtn" onclick="applySave()">저장</button></div>
+  </div>
+</div>
+<script>
+const Q={D:["오늘 내 눈에 걸린 것은?","오늘 내가 오래 바라본 것은?","지금 모으고 싶은 것은?","오늘 마음에 든 조각은?","오늘 본 것 중 가장 잘 만들어진 것은?","배열 속에서 뭔가 이상한 것은?","내가 지금 쓰는 언어는 무엇인가?"],R:["오늘 밑줄 친 문장은?","이 책은 어디서 날 건드렸나?","책이 내게 묻는 것은?","오늘 읽다 멈춘 곳은?","이 작가가 숨긴 것은?","오늘의 문장을 한마디로?","지금 이 책은 왜 필요한가?"],I:["오늘 떠오른 조각은?","아직 정리 안 된 것은?","만들고 싶은 것은?","지금 가장 흐릿한 아이디어는?","오늘의 연결은?","내가 계속 피하는 것은?","아직 이름 붙이지 못한 것은?"],W:["오늘 쓰지 못한 한 문장은?","지금 막혀있는 곳은?","이 글이 읽혀야 하는 사람은?","이 글의 핵심은 어디 있나?","내가 가장 자주 쓰는 단어는?","오늘의 리듬은?","아직 이름 붙이지 못한 것은?"]};
+const MODES=["D","R","I","W"],DLBL={D:"DESIGN\nROOM",R:"READING\nROOM",I:"IDEA\nROOM",W:"WRITING\nROOM"},DNUM={D:"01",R:"02",I:"03",W:"04"},RNAME={D:"디자인 작업실",R:"독서실",I:"아이디어 방",W:"글쓰기 방"};
+let mode=localStorage.getItem("fd_mode")||"D",qIdxs={},frags=getTF(),archUrl=localStorage.getItem("fd_arc")||"",wkUrl=localStorage.getItem("fd_worker")||"";
+function getTF(){const t=new Date().toISOString().slice(0,10),a=JSON.parse(localStorage.getItem("fd_frags")||"{}");return a[t]||[];}
+function saveTF(){const t=new Date().toISOString().slice(0,10),a=JSON.parse(localStorage.getItem("fd_frags")||"{}");a[t]=frags;localStorage.setItem("fd_frags",JSON.stringify(a));}
+updateClock();setInterval(updateClock,1000);applyMode(mode);renderFrags();
+document.getElementById("sin-arc").value=archUrl;document.getElementById("sin-wk").value=wkUrl;
+function updateClock(){const n=new Date();document.getElementById("hdr-date").textContent=n.toLocaleDateString("en-US",{weekday:"short"}).toUpperCase()+" · "+String(n.getMonth()+1).padStart(2,"0")+"."+String(n.getDate()).padStart(2,"0");document.getElementById("hdr-time").textContent=n.toLocaleTimeString("ko-KR",{hour:"2-digit",minute:"2-digit"});}
+function applyMode(m){mode=m;localStorage.setItem("fd_mode",m);document.getElementById("door-lbl").innerHTML=DLBL[m].replace("\n","<br>");document.getElementById("door-num").textContent=DNUM[m];document.getElementById("room-name").textContent=RNAME[m];document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("on",t.dataset.m===m));if(qIdxs[m]===undefined)qIdxs[m]=Math.floor(Math.random()*Q[m].length);document.getElementById("q-txt").textContent=Q[m][qIdxs[m]];}
+function setMode(el){applyMode(el.dataset.m);}
+function nextMode(){applyMode(MODES[(MODES.indexOf(mode)+1)%MODES.length]);}
+function shuffle(){const pool=Q[mode];let ni=Math.floor(Math.random()*pool.length);while(pool.length>1&&ni===qIdxs[mode])ni=Math.floor(Math.random()*pool.length);qIdxs[mode]=ni;const el=document.getElementById("q-txt");el.style.opacity="0";setTimeout(()=>{el.textContent=pool[ni];el.style.opacity="1";},200);}
+function saveFrag(){const inp=document.getElementById("memo-in"),txt=inp.value.trim();if(!txt)return;frags.push({m:mode,txt});saveTF();inp.value="";renderFrags();const btn=document.getElementById("save-btn");btn.textContent="SAVED";setTimeout(()=>btn.textContent="SAVE",800);if(wkUrl)fetch(wkUrl,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:txt,tag:mode})}).catch(e=>console.warn(e));}
+function renderFrags(){const el=document.getElementById("frags");if(!frags.length){el.innerHTML="";document.getElementById("fcnt").textContent="0";return;}el.innerHTML=frags.slice(-8).reverse().map((f,i)=>`<div class="frag"><span class="fcat">${f.m}</span><span class="ftxt">${esc(f.txt)}</span><button class="fdel" onclick="delFrag(${frags.length-1-i})">✕</button></div>`).join("");document.getElementById("fcnt").textContent=frags.length;}
+function delFrag(i){frags.splice(i,1);saveTF();renderFrags();}
+function openArchive(){archUrl?window.open(archUrl,"_blank"):toggleSettings();}
+function toggleSettings(){document.getElementById("settings").classList.toggle("open");}
+function applySave(){archUrl=document.getElementById("sin-arc").value.trim();wkUrl=document.getElementById("sin-wk").value.trim();localStorage.setItem("fd_arc",archUrl);localStorage.setItem("fd_worker",wkUrl);document.getElementById("settings").classList.remove("open");}
+document.querySelector(".title").addEventListener("dblclick",toggleSettings);
+document.getElementById("memo-in").addEventListener("keydown",e=>{if(e.key==="Enter")saveFrag();});
+document.getElementById("q-txt").style.transition="opacity .2s";
+function esc(s){return(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html><html lang="ko"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Energy Tracker</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:transparent;display:flex;justify-content:center;align-items:flex-start;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+.win{border-radius:12px;border:.5px solid rgba(0,0,0,.12);background:#fff;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05)}
+.tb{background:#EBEBEB;padding:8px 12px 7px;display:flex;align-items:center;border-bottom:.5px solid rgba(0,0,0,.1)}
+.tls{display:flex;gap:5px}.tl{width:11px;height:11px;border-radius:50%}
+.wt{flex:1;font-size:12px;font-weight:500;color:#3C3C3C;text-align:center}.sp{width:42px}
+.win{width:272px}
+.garea{padding:12px 14px 6px}
+.gsvg{width:100%;display:block}
+.dlabels{display:flex;justify-content:space-between;padding:4px 0 8px;border-bottom:.5px solid rgba(0,0,0,.07)}
+.dl{font-size:10px;color:#8E8E93;text-align:center;width:14.28%;font-weight:500}
+.dl.today{color:#007AFF;font-weight:600}
+.erow{padding:8px 12px 12px;display:flex;flex-direction:column;gap:6px;border-top:.5px solid rgba(0,0,0,.07)}
+.etlbl{font-size:10px;color:#636366;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.ebns{display:flex;gap:6px}
+.eb{flex:1;padding:6px 0;border:.5px solid rgba(0,0,0,.12);border-radius:6px;font-size:11px;color:#636366;background:#F9F9F9;cursor:pointer;font-family:inherit;transition:all .12s}
+.eb:hover{background:#F0F0F0}
+.on-l{background:#EEF2FF!important;border-color:#6366F1!important;color:#4338CA!important;font-weight:500}
+.on-m{background:#FFF3E0!important;border-color:#F59E0B!important;color:#D97706!important;font-weight:500}
+.on-h{background:#FFEEF4!important;border-color:#FF6B8A!important;color:#E91E63!important;font-weight:500}
+.st{font-size:9px;padding:2px 7px;border-radius:3px;background:#F2F2F7;color:#8E8E93}
+.st.live{background:#E8F8E8;color:#28A745}
+</style></head><body>
+<div class="win">
+  <div class="tb"><div class="tls"><div class="tl" style="background:#FF5F57"></div><div class="tl" style="background:#FFBD2E"></div><div class="tl" style="background:#28C840"></div></div><div class="wt">Energy Tracker</div><div class="sp" style="display:flex;justify-content:flex-end;align-items:center"><span class="st" id="st">local</span></div></div>
+  <div class="garea">
+    <svg class="gsvg" id="gsvg" viewBox="0 0 244 56" role="img" aria-label="이번 주 에너지 그래프"></svg>
+    <div class="dlabels" id="dlabels"></div>
+  </div>
+  <div class="erow">
+    <div class="etlbl">Today</div>
+    <div class="ebns"><button class="eb" data-v="LOW" onclick="setE(this)">Low</button><button class="eb" data-v="MEDIUM" onclick="setE(this)">Medium</button><button class="eb" data-v="HIGH" onclick="setE(this)">High</button></div>
+  </div>
+</div>
+<script>
+const WORKER_URL='';
+const W=244,H=56,PX=18;const YP={LOW:H-8,MEDIUM:H/2,HIGH:9};const CLS={LOW:'on-l',MEDIUM:'on-m',HIGH:'on-h'};const DAYS=['Mo','Tu','We','Th','Fr','Sa','Su'];
+let data=JSON.parse(localStorage.getItem('en_d')||'{}');
+function wstart(){const n=new Date(),d=n.getDay();n.setDate(n.getDate()-(d===0?6:d-1));n.setHours(0,0,0,0);return n;}
+function wdays(){const s=wstart();return Array.from({length:7},(_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return d.toISOString().slice(0,10);});}
+const WD=wdays(),TODAY=new Date().toISOString().slice(0,10);
+function draw(){
+  const xs=WD.map((_,i)=>PX+i*(W-PX*2)/6);
+  const pts=WD.map((d,i)=>data[d]?{x:xs[i],y:YP[data[d]],date:d}:null).filter(Boolean);
+  const cv={LOW:'#6366F1',MEDIUM:'#F59E0B',HIGH:'#FF6B8A'};
+  let svg=`<defs><linearGradient id="gl" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#6366F1" stop-opacity=".7"/><stop offset="50%" stop-color="#F59E0B" stop-opacity=".7"/><stop offset="100%" stop-color="#FF6B8A" stop-opacity=".7"/></linearGradient></defs>
+  <line x1="${PX}" y1="${YP.HIGH}" x2="${W-PX}" y2="${YP.HIGH}" stroke="rgba(0,0,0,.05)" stroke-width=".5"/>
+  <line x1="${PX}" y1="${YP.MEDIUM}" x2="${W-PX}" y2="${YP.MEDIUM}" stroke="rgba(0,0,0,.05)" stroke-width=".5"/>
+  <line x1="${PX}" y1="${YP.LOW}" x2="${W-PX}" y2="${YP.LOW}" stroke="rgba(0,0,0,.05)" stroke-width=".5"/>
+  <text x="${PX-3}" y="${YP.HIGH+1}" text-anchor="end" font-size="5" fill="#C7C7CC">H</text>
+  <text x="${PX-3}" y="${YP.MEDIUM+1}" text-anchor="end" font-size="5" fill="#C7C7CC">M</text>
+  <text x="${PX-3}" y="${YP.LOW+1}" text-anchor="end" font-size="5" fill="#C7C7CC">L</text>`;
+  if(pts.length>1){const pd=pts.map((p,i)=>`${i===0?'M':'L'}${p.x},${p.y}`).join(' ');svg+=`<path d="${pd}" fill="none" stroke="url(#gl)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;}
+  pts.forEach(p=>{const it=p.date===TODAY,c=cv[data[p.date]]||'#007AFF';if(it)svg+=`<circle cx="${p.x}" cy="${p.y}" r="7" fill="${c}" fill-opacity=".1"/>`;svg+=`<circle cx="${p.x}" cy="${p.y}" r="${it?3.5:2.5}" fill="${c}"/>`;if(it)svg+=`<circle cx="${p.x}" cy="${p.y}" r="${it?3.5:2.5}" fill="none" stroke="#fff" stroke-width="1.5"/>`;}); 
+  document.getElementById('gsvg').innerHTML=svg;
+  document.getElementById('dlabels').innerHTML=WD.map((d,i)=>`<span class="dl${d===TODAY?' today':''}">${DAYS[i]}</span>`).join('');
+}
+function setE(el){const v=el.dataset.v;data[TODAY]=v;localStorage.setItem('en_d',JSON.stringify(data));document.querySelectorAll('.eb').forEach(b=>b.className='eb');el.classList.add(CLS[v]);draw();if(WORKER_URL)fetch(WORKER_URL+'/energy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:TODAY,energy:v})}).catch(e=>console.warn(e));}
+async function pull(){if(!WORKER_URL)return;try{const r=await fetch(WORKER_URL+'/energy'),d=await r.json();if(d.data){data={...d.data,...data};localStorage.setItem('en_d',JSON.stringify(data));draw();const s=document.getElementById('st');s.textContent='live';s.classList.add('live');}}catch(e){console.warn(e);}}
+if(data[TODAY]){document.querySelectorAll('.eb').forEach(b=>{if(b.dataset.v===data[TODAY])b.classList.add(CLS[data[TODAY]]);}); }
+draw();pull();
+</script></body></html>

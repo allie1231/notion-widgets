@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading Timer</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+KR:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --body:    #F5E0EC;
+  --screen:  #ffffff;
+  --accent:  #E87BA0;
+  --accent2: #D9A0BB;
+  --wheel:   #ffffff;
+  --center:  #F5E0EC;
+  --text:    #333333;
+}
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: transparent;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px 0;
+  min-height: 100vh;
+}
+
+/* ── iPod 몸체 ── */
+.ipod {
+  width: 230px;
+  background: var(--body);
+  border-radius: 30px;
+  padding: 15px 15px 22px;
+  transition: background 0.3s;
+}
+
+/* ── 스크린 ── */
+.screen {
+  background: var(--screen);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 15px;
+}
+
+.screen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--body);
+}
+
+.screen-header span {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.screen-body {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+.book-cover {
+  width: 54px;
+  height: 54px;
+  border-radius: 8px;
+  background: var(--body);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.book-cover svg {
+  width: 26px;
+  height: 26px;
+  color: var(--accent);
+}
+
+.track-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.track-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+
+.track-sub {
+  font-size: 9px;
+  color: var(--accent2);
+}
+
+.progress-area {
+  padding: 6px 10px 10px;
+}
+
+.progress-bar {
+  height: 3px;
+  background: var(--body);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.8s linear;
+}
+
+.time-display {
+  display: flex;
+  justify-content: flex-end;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  color: var(--accent);
+}
+
+/* ── 휠 ── */
+.wheel-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.menu-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent2);
+}
+
+.wheel {
+  width: 126px;
+  height: 126px;
+  border-radius: 50%;
+  background: var(--wheel);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wb {
+  position: absolute;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--accent);
+  user-select: none;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+}
+.wb-top    { top: 11px;    left: 50%; transform: translateX(-50%); }
+.wb-left   { left: 11px;   top: 50%;  transform: translateY(-50%); }
+.wb-right  { right: 11px;  top: 50%;  transform: translateY(-50%); }
+.wb-bottom { bottom: 11px; left: 50%; transform: translateX(-50%); }
+
+.center-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--center);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s;
+}
+.center-btn:active { transform: scale(0.91); }
+
+.center-btn svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+  transition: color 0.2s;
+}
+
+/* ── 시간 선택 ── */
+.time-set {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 11px;
+}
+
+.ts-btn {
+  font-size: 9px;
+  font-family: 'Space Mono', monospace;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  color: var(--accent);
+  background: transparent;
+  opacity: 0.5;
+  transition: all 0.18s;
+}
+
+.ts-btn:hover  { opacity: 0.8; }
+.ts-btn.active { background: var(--accent); color: var(--wheel); opacity: 1; }
+
+/* ── 완료 애니메이션 ── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+.done .screen { animation: blink 0.9s ease-in-out 3; }
+</style>
+</head>
+<body>
+
+<div class="ipod" id="ipod">
+
+  <!-- 스크린 -->
+  <div class="screen">
+    <div class="screen-header">
+      <span>Now Playing</span>
+      <span id="header-icon">▶ &nbsp;&#9645;</span>
+    </div>
+    <div class="screen-body">
+      <div class="book-cover">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </div>
+      <div class="track-info">
+        <div class="track-title" id="track-title">Reading...</div>
+        <div class="track-sub" id="track-sub">Remaining Time</div>
+      </div>
+    </div>
+    <div class="progress-area">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="time-display" id="time-display">-25:00</div>
+    </div>
+  </div>
+
+  <!-- 휠 -->
+  <div class="wheel-area">
+    <div class="menu-label">MENU</div>
+    <div class="wheel">
+      <span class="wb wb-top">MENU</span>
+      <span class="wb wb-left" id="btn-reset" title="처음으로">◀◀</span>
+      <span class="wb wb-right" title="다음">▶▶</span>
+      <span class="wb wb-bottom" title="재생/정지">▶ ‖</span>
+      <button class="center-btn" id="center-btn" onclick="togglePlay()"
+              aria-label="재생/일시정지">
+        <svg id="pp-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+          <polygon points="5,3 19,12 5,21"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- 시간 선택 -->
+  <div class="time-set">
+    <button class="ts-btn" onclick="setTime(10, this)">10M</button>
+    <button class="ts-btn active" onclick="setTime(25, this)">25M</button>
+    <button class="ts-btn" onclick="setTime(30, this)">30M</button>
+    <button class="ts-btn" onclick="setTime(60, this)">1H</button>
+  </div>
+
+</div>
+
+<script>
+/* ── 테마 ── */
+const THEMES = {
+  pink:  { body:'#F5E0EC', screen:'#ffffff', accent:'#E87BA0', accent2:'#D9A0BB', wheel:'#ffffff', center:'#F5E0EC' },
+  blue:  { body:'#C5DEF5', screen:'#ffffff', accent:'#5580CC', accent2:'#7AAAC0', wheel:'#ffffff', center:'#D6E8F5' },
+  sky:   { body:'#B8D8F5', screen:'#ffffff', accent:'#3A6BC0', accent2:'#6090C8', wheel:'#ffffff', center:'#C8E0F5' },
+  dark:  { body:'#1E1E1E', screen:'#2A2A2A', accent:'#DDDDDD', accent2:'#888888', wheel:'#2A2A2A', center:'#333333' },
+  cream: { body:'#F5EDD8', screen:'#FFF8EE', accent:'#9A7040', accent2:'#B8935A', wheel:'#FFF8EE', center:'#F0E8C8' },
+  green: { body:'#C5E5C8', screen:'#F0FAF0', accent:'#4A8055', accent2:'#6A9868', wheel:'#F0FAF0', center:'#D0EAD0' },
+};
+
+function applyTheme(name) {
+  const t = THEMES[name] || THEMES.pink;
+  const r = document.documentElement.style;
+  r.setProperty('--body',    t.body);
+  r.setProperty('--screen',  t.screen);
+  r.setProperty('--accent',  t.accent);
+  r.setProperty('--accent2', t.accent2);
+  r.setProperty('--wheel',   t.wheel);
+  r.setProperty('--center',  t.center);
+}
+
+const p = new URLSearchParams(window.location.search);
+applyTheme(p.get('theme') || localStorage.getItem('rft_theme') || 'pink');
+if (p.get('theme')) localStorage.setItem('rft_theme', p.get('theme'));
+
+/* ── 타이머 ── */
+const savedMin = parseInt(localStorage.getItem('rft_min')) || 25;
+let totalSec  = savedMin * 60;
+let remaining = totalSec;
+let running   = false;
+let timer     = null;
+
+function fmt(s) {
+  const m  = Math.floor(s / 60);
+  const ss = s % 60;
+  return `-${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`;
+}
+
+function updateDisplay() {
+  document.getElementById('time-display').textContent = fmt(remaining);
+  const pct = totalSec > 0 ? ((totalSec - remaining) / totalSec * 100) : 0;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+function setTime(min, el) {
+  if (running) togglePlay();
+  totalSec  = min * 60;
+  remaining = totalSec;
+  localStorage.setItem('rft_min', min);
+  updateDisplay();
+  document.querySelectorAll('.ts-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('track-title').textContent = 'Reading...';
+  document.getElementById('track-sub').textContent   = 'Remaining Time';
+  document.getElementById('ipod').classList.remove('done');
+}
+
+function togglePlay() {
+  if (remaining <= 0) { resetTimer(); return; }
+  running = !running;
+
+  if (running) {
+    timer = setInterval(() => {
+      remaining--;
+      updateDisplay();
+      if (remaining <= 0) {
+        clearInterval(timer);
+        running = false;
+        onDone();
+      }
+    }, 1000);
+    /* 일시정지 아이콘 */
+    document.getElementById('pp-icon').innerHTML =
+      '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
+    document.getElementById('track-title').textContent = 'Reading...';
+    document.getElementById('track-sub').textContent   = 'Remaining Time';
+  } else {
+    clearInterval(timer);
+    /* 재생 아이콘 */
+    document.getElementById('pp-icon').innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+    document.getElementById('track-title').textContent = 'Paused';
+  }
+}
+
+function resetTimer() {
+  if (running) { clearInterval(timer); running = false; }
+  remaining = totalSec;
+  updateDisplay();
+  document.getElementById('pp-icon').innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+  document.getElementById('track-title').textContent = 'Reading...';
+  document.getElementById('track-sub').textContent   = 'Remaining Time';
+  document.getElementById('ipod').classList.remove('done');
+}
+
+function onDone() {
+  document.getElementById('pp-icon').innerHTML = '<polygon points="5,3 19,12 5,21"/>';
+  document.getElementById('track-title').textContent = '완료 ✓';
+  document.getElementById('track-sub').textContent   = 'Good Job!';
+  document.getElementById('ipod').classList.add('done');
+}
+
+document.getElementById('btn-reset').addEventListener('click', resetTimer);
+
+/* ── 저장된 시간 복원 ── */
+document.querySelectorAll('.ts-btn').forEach(btn => {
+  const v = btn.textContent.trim();
+  const m = v === '1H' ? 60 : parseInt(v);
+  if (m === savedMin) {
+    document.querySelectorAll('.ts-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+});
+totalSec  = savedMin * 60;
+remaining = totalSec;
+updateDisplay();
+</script>
+</body>
+</html>

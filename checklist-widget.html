@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checklist · Itjae</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  min-height:100%;background:transparent;
+  display:flex;justify-content:center;align-items:flex-start;
+  padding:16px;
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+}
+
+/* ── CARD ── */
+.card{
+  width:300px;
+  background:#fff;
+  border-radius:14px;
+  border:.5px solid rgba(0,0,0,.1);
+  box-shadow:0 6px 28px rgba(0,0,0,.1),0 1px 4px rgba(0,0,0,.06);
+  overflow:hidden;
+}
+
+/* ── HEADER (yellow) ── */
+.hdr{
+  background:#FFBD2E;
+  padding:10px 14px 9px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.hdr-left{display:flex;align-items:center;gap:8px}
+.hdr-date{font-size:12px;font-weight:600;color:#1C1C1E;letter-spacing:.01em}
+.hdr-time{
+  font-size:11px;font-weight:500;color:rgba(0,0,0,.55);
+  background:rgba(0,0,0,.1);padding:1px 7px;border-radius:5px;
+}
+.hdr-right{display:flex;align-items:center;gap:8px}
+.hdr-more{
+  font-size:14px;color:rgba(0,0,0,.4);cursor:pointer;
+  letter-spacing:.1em;line-height:1;padding:0 2px;
+}
+.hdr-more:hover{color:rgba(0,0,0,.7)}
+.done-btn{
+  font-size:12px;font-weight:600;color:#1C1C1E;
+  cursor:pointer;background:rgba(0,0,0,.08);
+  border:none;border-radius:5px;padding:2px 10px;
+  font-family:inherit;transition:background .12s;
+}
+.done-btn:hover{background:rgba(0,0,0,.14)}
+.done-btn.hide-mode{background:rgba(0,0,0,.18)}
+
+/* ── TITLE ── */
+.list-title{
+  padding:14px 16px 4px;
+  font-size:18px;font-weight:700;color:#1C1C1E;
+  line-height:1.3;
+}
+.list-title-input{
+  padding:14px 16px 4px;width:100%;
+  font-size:18px;font-weight:700;color:#1C1C1E;
+  border:none;outline:none;background:transparent;
+  font-family:inherit;line-height:1.3;
+}
+
+/* ── CHECKLIST ── */
+.items{padding:6px 0}
+
+.item{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:7px 16px;cursor:pointer;
+  transition:background .1s;position:relative;
+}
+.item:hover{background:rgba(0,0,0,.025)}
+
+.cb{
+  width:18px;height:18px;border-radius:4px;
+  border:1.5px solid rgba(0,0,0,.22);
+  flex-shrink:0;margin-top:1px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s;
+}
+.cb.on{background:#1C1C1E;border-color:#1C1C1E}
+.cb.on::after{
+  content:'';width:5px;height:9px;
+  border-right:2px solid #fff;border-bottom:2px solid #fff;
+  transform:rotate(45deg) translate(-1px,-1px);display:block;
+}
+
+.item-text{
+  font-size:14px;color:#1C1C1E;line-height:1.5;
+  flex:1;word-break:keep-all;transition:color .15s;
+}
+.item-text.done{color:#C7C7CC;text-decoration:line-through}
+
+.item-del{
+  opacity:0;font-size:14px;color:#C7C7CC;
+  flex-shrink:0;cursor:pointer;line-height:1;padding:2px 0 0;
+  transition:opacity .1s;background:none;border:none;
+}
+.item:hover .item-del{opacity:1}
+.item-del:hover{color:#FF3B30}
+
+/* 완료 항목 숨기기 */
+.item.done-hidden{display:none}
+
+/* ── ADD ITEM ── */
+.add-row{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 16px 10px;
+}
+.add-icon{
+  width:18px;height:18px;border-radius:50%;
+  border:1.5px solid #007AFF;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;color:#007AFF;font-size:14px;line-height:1;
+  cursor:pointer;transition:all .12s;
+}
+.add-icon:hover{background:#007AFF;color:#fff}
+.add-inp{
+  flex:1;background:transparent;border:none;outline:none;
+  font-size:14px;color:#1C1C1E;font-family:inherit;
+}
+.add-inp::placeholder{color:#C7C7CC}
+
+/* ── DIVIDER ── */
+.divider{height:.5px;background:rgba(0,0,0,.06);margin:0 16px}
+
+/* ── FOOTER MEMO ── */
+.footer-memo{
+  padding:8px 16px 12px;
+  font-size:12px;color:#8E8E93;line-height:1.6;
+  min-height:32px;
+}
+.footer-memo-input{
+  width:100%;background:transparent;border:none;outline:none;
+  font-size:12px;color:#8E8E93;line-height:1.6;
+  font-family:inherit;padding:8px 16px 12px;resize:none;
+  min-height:40px;
+}
+.footer-memo-input::placeholder{color:rgba(0,0,0,.18)}
+
+/* ── STATS ── */
+.stats{
+  padding:0 16px 10px;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.stats-txt{font-size:11px;color:#C7C7CC;letter-spacing:.02em}
+.stats-pct{font-size:11px;color:#FFBD2E;font-weight:600}
+
+/* ── PROGRESS BAR ── */
+.pbar-wrap{padding:0 16px 10px}
+.pbar{height:3px;background:#F2F2F7;border-radius:2px;overflow:hidden}
+.pbar-fill{height:100%;background:#FFBD2E;border-radius:2px;transition:width .3s ease}
+
+/* ── SETTINGS PANEL ── */
+.settings{
+  border-top:.5px solid rgba(0,0,0,.08);
+  padding:8px 14px 10px;
+  display:none;flex-direction:column;gap:6px;
+}
+.settings.open{display:flex}
+.set-row{display:flex;gap:6px;align-items:center}
+.set-lbl{font-size:10px;color:#8E8E93;min-width:70px;letter-spacing:.04em}
+.set-in{
+  flex:1;background:#F9F9F9;border:.5px solid rgba(0,0,0,.1);
+  border-radius:5px;padding:3px 8px;font-size:11px;color:#333;
+  outline:none;font-family:inherit;
+}
+.set-btn{
+  background:#FFBD2E;color:#1C1C1E;border:none;
+  border-radius:5px;padding:3px 10px;font-size:10px;
+  font-weight:600;cursor:pointer;font-family:inherit;
+}
+.set-btn:hover{background:#F0AD20}
+.st-badge{
+  font-size:9px;padding:1px 7px;border-radius:4px;
+  background:#F2F2F7;color:#8E8E93;letter-spacing:.06em;
+}
+.st-badge.live{background:#E8F8E8;color:#28A745}
+</style>
+</head>
+<body>
+<div class="card">
+
+  <!-- 헤더 -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <span class="hdr-date" id="hdr-date"></span>
+      <span class="hdr-time" id="hdr-time"></span>
+    </div>
+    <div class="hdr-right">
+      <button class="hdr-more" onclick="toggleSettings()">&#183;&#183;&#183;</button>
+      <button class="done-btn" id="done-btn" onclick="toggleHideDone()">Done</button>
+    </div>
+  </div>
+
+  <!-- 제목 -->
+  <input class="list-title-input" id="list-title"
+    placeholder="Things to do today"
+    value="" maxlength="60" />
+
+  <!-- 체크리스트 -->
+  <div class="items" id="items"></div>
+
+  <!-- 새 항목 추가 -->
+  <div class="add-row">
+    <div class="add-icon" onclick="focusAdd()">+</div>
+    <input class="add-inp" id="add-inp"
+      placeholder="새 항목 추가..."
+      maxlength="120" />
+  </div>
+
+  <!-- 진행률 -->
+  <div class="pbar-wrap"><div class="pbar"><div class="pbar-fill" id="pbar-fill"></div></div></div>
+  <div class="stats">
+    <span class="stats-txt" id="stats-txt">0 / 0 completed</span>
+    <span class="stats-pct" id="stats-pct">0%</span>
+  </div>
+
+  <!-- 구분선 + 하단 메모 -->
+  <div class="divider"></div>
+  <textarea class="footer-memo-input" id="footer-memo"
+    placeholder="메모를 추가하세요..."
+    rows="2"></textarea>
+
+  <!-- 설정 패널 -->
+  <div class="settings" id="settings">
+    <div class="set-row">
+      <span class="set-lbl">Notion Worker</span>
+      <input class="set-in" id="set-url" type="text" placeholder="https://..." />
+      <button class="set-btn" onclick="applyWorker()">연결</button>
+    </div>
+    <div class="set-row">
+      <span class="set-lbl">상태</span>
+      <span class="st-badge" id="st-badge">local</span>
+      <button class="set-btn" style="background:#F2F2F7;color:#636366" onclick="clearAll()">초기화</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ─── CONFIG ─── */
+let WORKER_URL = localStorage.getItem('cl_worker') || '';
+
+/* ─── STATE ─── */
+let items    = JSON.parse(localStorage.getItem('cl_items') || '[]');
+let title    = localStorage.getItem('cl_title') || '';
+let memo     = localStorage.getItem('cl_memo')  || '';
+let hideDone = false;
+
+/* ─── INIT ─── */
+document.getElementById('list-title').value = title;
+document.getElementById('footer-memo').value = memo;
+document.getElementById('set-url').value     = WORKER_URL;
+updateClock();
+setInterval(updateClock, 1000);
+renderItems();
+if (WORKER_URL) fetchFromWorker();
+
+/* ─── CLOCK ─── */
+function updateClock() {
+  const n = new Date();
+  document.getElementById('hdr-date').textContent =
+    n.toLocaleDateString('ko-KR', { weekday:'short', month:'short', day:'numeric' });
+  document.getElementById('hdr-time').textContent =
+    n.toLocaleTimeString('ko-KR', { hour:'2-digit', minute:'2-digit' });
+}
+
+/* ─── RENDER ─── */
+function renderItems() {
+  const el = document.getElementById('items');
+  el.innerHTML = items.map((it, i) => `
+    <div class="item${hideDone && it.done ? ' done-hidden' : ''}" onclick="toggle(${i})">
+      <div class="cb${it.done ? ' on' : ''}"></div>
+      <span class="item-text${it.done ? ' done' : ''}">${esc(it.text)}</span>
+      <button class="item-del" onclick="delItem(event,${i})">&#215;</button>
+    </div>`).join('');
+  updateStats();
+}
+
+function updateStats() {
+  const done  = items.filter(i => i.done).length;
+  const total = items.length;
+  const pct   = total ? Math.round(done / total * 100) : 0;
+  document.getElementById('stats-txt').textContent  = `${done} / ${total} completed`;
+  document.getElementById('stats-pct').textContent  = `${pct}%`;
+  document.getElementById('pbar-fill').style.width  = pct + '%';
+}
+
+/* ─── ACTIONS ─── */
+function toggle(i) {
+  if (!items[i]) return;
+  items[i].done = !items[i].done;
+  save();
+  renderItems();
+  if (WORKER_URL && items[i].id) patchWorker(items[i].id, items[i].done);
+}
+
+function delItem(e, i) {
+  e.stopPropagation();
+  items.splice(i, 1);
+  save();
+  renderItems();
+}
+
+function addItem(text) {
+  if (!text.trim()) return;
+  items.push({ id: null, text: text.trim(), done: false });
+  save();
+  renderItems();
+  if (WORKER_URL) postWorker(text.trim());
+}
+
+function toggleHideDone() {
+  hideDone = !hideDone;
+  const btn = document.getElementById('done-btn');
+  btn.textContent  = hideDone ? 'Show' : 'Done';
+  btn.classList.toggle('hide-mode', hideDone);
+  renderItems();
+}
+
+function toggleSettings() {
+  document.getElementById('settings').classList.toggle('open');
+}
+
+function clearAll() {
+  if (!confirm('모든 항목을 초기화할까요?')) return;
+  items = [];
+  save();
+  renderItems();
+}
+
+/* ─── INPUT ─── */
+function focusAdd() { document.getElementById('add-inp').focus(); }
+
+document.getElementById('add-inp').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    addItem(e.target.value);
+    e.target.value = '';
+  }
+});
+
+document.getElementById('list-title').addEventListener('input', e => {
+  title = e.target.value;
+  localStorage.setItem('cl_title', title);
+});
+
+document.getElementById('footer-memo').addEventListener('input', e => {
+  memo = e.target.value;
+  localStorage.setItem('cl_memo', memo);
+});
+
+/* ─── PERSIST ─── */
+function save() { localStorage.setItem('cl_items', JSON.stringify(items)); }
+
+/* ─── WORKER ─── */
+function applyWorker() {
+  WORKER_URL = document.getElementById('set-url').value.trim();
+  localStorage.setItem('cl_worker', WORKER_URL);
+  if (WORKER_URL) fetchFromWorker();
+  toggleSettings();
+}
+
+async function fetchFromWorker() {
+  try {
+    const r = await fetch(WORKER_URL + '/todos');
+    const d = await r.json();
+    if (Array.isArray(d.todos) && d.todos.length) {
+      items = d.todos.map(t => ({ id: t.id, text: t.text, done: t.done }));
+      save();
+      renderItems();
+      document.getElementById('st-badge').textContent = 'live';
+      document.getElementById('st-badge').classList.add('live');
+    }
+  } catch(e) { console.warn('Worker 연결 실패:', e.message); }
+}
+
+async function postWorker(text) {
+  try {
+    const r = await fetch(WORKER_URL + '/todos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    });
+    const d = await r.json();
+    if (d.id) {
+      const last = items[items.length - 1];
+      if (last && !last.id) last.id = d.id;
+      save();
+    }
+  } catch(e) { console.warn(e); }
+}
+
+async function patchWorker(id, done) {
+  try {
+    await fetch(WORKER_URL + '/todos/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ done }),
+    });
+  } catch(e) { console.warn(e); }
+}
+
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+</script>
+</body>
+</html>

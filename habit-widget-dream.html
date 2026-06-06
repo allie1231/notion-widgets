@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Habit Tracker · Itjae</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --text:#2C1850;--muted:#A080C0;
+  --ac:#C850A0;--ac2:#5880D0;
+  --ibd:rgba(200,160,220,.2);
+  --card:rgba(255,248,254,0.96);--cbd:rgba(255,255,255,.82);
+}
+html,body{min-height:100%;background:transparent;display:flex;justify-content:center;align-items:flex-start;padding:16px;font-family:'Space Mono',monospace;}
+.widget{width:280px;background:var(--card);border:1px solid var(--cbd);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(200,100,160,.12);animation:float 6s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.hdr{padding:9px 13px;border-bottom:1px solid var(--ibd);display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:8px;letter-spacing:.22em;color:var(--muted);font-weight:700}
+.hdr-right{display:flex;gap:8px;align-items:center;}
+.st{font-size:7px;color:var(--muted);letter-spacing:.1em}.st.live{color:var(--ac)}
+.add-btn{font-size:14px;color:var(--muted);background:none;border:none;cursor:pointer;line-height:1;transition:color .12s;padding:0;}
+.add-btn:hover{color:var(--ac)}
+
+/* 그리드 */
+.grid{padding:10px 12px 12px;}
+.ghead{display:grid;grid-template-columns:88px repeat(7,1fr);margin-bottom:4px;}
+.gh{font-size:7px;color:var(--muted);text-align:center;letter-spacing:.04em;}
+.gh.today{color:var(--ac);font-weight:700}
+.gh:first-child{text-align:left}
+.hrow{display:grid;grid-template-columns:88px repeat(7,1fr);align-items:center;padding:1px 0;}
+.hname{
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:11px;color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  padding-right:6px; cursor:pointer;
+}
+.hname:hover{color:var(--ac)}
+.cell{
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;cursor:pointer;
+  color:rgba(200,160,220,.3);
+  transition:color .12s; padding:2px 0;
+  user-select:none;
+}
+.cell:hover{color:rgba(200,80,160,.4)}
+.cell.on{color:var(--ac)}
+.cell.today-col{background:rgba(200,80,160,.04);border-radius:4px;}
+
+.empty-msg{
+  font-family:'Cormorant Garamond',serif;font-style:italic;
+  font-size:12px;color:var(--muted);opacity:.55;
+  padding:16px 0; text-align:center;
+}
+.footer{padding:6px 12px 8px;border-top:1px solid var(--ibd);display:flex;justify-content:space-between;}
+.fstat{font-size:7px;color:var(--muted);letter-spacing:.1em}
+.fstat em{font-style:normal;color:var(--ac);font-family:'Cormorant Garamond',serif;font-size:13px;}
+</style>
+</head>
+<body>
+<div class="widget">
+  <div class="hdr">
+    <span class="logo">WEEKLY HABIT</span>
+    <div class="hdr-right">
+      <span class="st" id="st">LOCAL</span>
+      <button class="add-btn" onclick="addHabit()" title="습관 추가">+</button>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="ghead" id="ghead"></div>
+    <div id="rows"></div>
+  </div>
+  <div class="footer">
+    <div class="fstat"><em id="fcnt">0</em> checked today</div>
+    <div class="fstat" id="fwk">week 0 / 0</div>
+  </div>
+</div>
+<script>
+/* ─── CONFIG ─── */
+const WORKER_URL=''; // 'https://tracker.YOUR_NAME.workers.dev'
+
+const DAYS=['Mo','Tu','We','Th','Fr','Sa','Su'];
+let habits=JSON.parse(localStorage.getItem('hb_h')||'["아침 스트레칭","독서","물 2L"]');
+let checks=JSON.parse(localStorage.getItem('hb_c')||'{}');
+
+function wstart(){const n=new Date(),d=n.getDay();n.setDate(n.getDate()-(d===0?6:d-1));n.setHours(0,0,0,0);return n;}
+function wdays(){const s=wstart();return Array.from({length:7},(_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return d.toISOString().slice(0,10);});}
+const WD=wdays(), TODAY=new Date().toISOString().slice(0,10);
+const ck=(d,h)=>`${d}__${h}`;
+
+function render(){
+  // 헤더
+  const gh=document.getElementById('ghead');
+  gh.innerHTML=`<div class="gh">habit</div>${DAYS.map((d,i)=>`<div class="gh${WD[i]===TODAY?' today':''}">${d}</div>`).join('')}`;
+  
+  const rows=document.getElementById('rows');
+  if(!habits.length){rows.innerHTML='<div class="empty-msg">+ 버튼으로 습관을 추가하세요</div>';updateFooter();return;}
+  
+  rows.innerHTML=habits.map((h,hi)=>`
+    <div class="hrow">
+      <div class="hname" onclick="removeHabit(${hi})" title="길게 눌러 삭제">${esc(h)}</div>
+      ${WD.map((d,di)=>{
+        const isToday=d===TODAY, isOn=!!checks[ck(d,h)];
+        return `<div class="cell${isOn?' on':''}${isToday?' today-col':''}" onclick="toggle('${d}','${esc2(h)}')">${isOn?'♥':'♡'}</div>`;
+      }).join('')}
+    </div>`).join('');
+  updateFooter();
+}
+
+function toggle(date,habit){
+  const k=ck(date,habit);
+  checks[k]=!checks[k];
+  if(!checks[k])delete checks[k];
+  localStorage.setItem('hb_c',JSON.stringify(checks));
+  render();
+  if(WORKER_URL){
+    fetch(WORKER_URL+'/habit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,habit,checked:!!checks[k]})}).catch(e=>console.warn(e));
+  }
+}
+
+function updateFooter(){
+  const todayChecked=habits.filter(h=>checks[ck(TODAY,h)]).length;
+  const totalPossible=habits.length*7;
+  const totalChecked=Object.keys(checks).filter(k=>WD.some(d=>k.startsWith(d+'__'))).length;
+  document.getElementById('fcnt').textContent=todayChecked;
+  document.getElementById('fwk').textContent=`week ${totalChecked} / ${totalPossible}`;
+}
+
+function addHabit(){
+  const name=prompt('새 습관 이름을 입력하세요:');
+  if(name?.trim()){habits.push(name.trim());localStorage.setItem('hb_h',JSON.stringify(habits));render();}
+}
+
+let rmTimer=null;
+function removeHabit(i){
+  if(rmTimer){
+    clearTimeout(rmTimer);rmTimer=null;
+    if(confirm(`"${habits[i]}" 습관을 삭제할까요?`)){
+      habits.splice(i,1);
+      localStorage.setItem('hb_h',JSON.stringify(habits));
+      render();
+    }
+  } else {
+    rmTimer=setTimeout(()=>{rmTimer=null;},400);
+  }
+}
+
+async function pull(){
+  if(!WORKER_URL)return;
+  try{const r=await fetch(WORKER_URL+'/habit'),d=await r.json();
+    if(d.checks){checks={...d.checks,...checks};localStorage.setItem('hb_c',JSON.stringify(checks));render();document.getElementById('st').textContent='LIVE';document.getElementById('st').classList.add('live');}
+  }catch(e){console.warn(e);}
+}
+
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc2(s){return(s||'').replace(/'/g,"\\'");}
+
+render(); pull();
+</script>
+</body>
+</html>

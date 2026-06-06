@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Photo Widget · Itjae</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:transparent;display:flex;justify-content:center;align-items:flex-start;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',monospace}
+
+/* ── CAMERA BODY ── */
+.cam{
+  width:356px;
+  background:linear-gradient(160deg,#F5F5F0 0%,#ECECEA 100%);
+  border-radius:16px;
+  border:1px solid rgba(0,0,0,.1);
+  box-shadow:0 6px 28px rgba(0,0,0,.12),0 1px 4px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);
+  overflow:hidden;
+}
+
+/* ── TOP BAR (lens + shutter) ── */
+.ctop{
+  background:linear-gradient(180deg,#E5E5DF 0%,#D8D8D2 100%);
+  padding:6px 10px 5px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid rgba(0,0,0,.07);
+}
+.lens-wrap{display:flex;align-items:center;gap:6px}
+.lens{
+  width:24px;height:24px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#5A5A5A,#111);
+  border:2.5px solid #2A2A2A;
+  box-shadow:0 0 0 1px rgba(255,255,255,.25),inset 0 2px 4px rgba(255,255,255,.12);
+  flex-shrink:0;
+}
+.brand{font-size:8px;font-weight:700;color:#888;letter-spacing:.14em;text-transform:uppercase}
+.shutter-wrap{display:flex;align-items:center;gap:6px}
+.zoom{
+  width:36px;height:9px;
+  background:linear-gradient(180deg,#CCC 0%,#B8B8B4 100%);
+  border-radius:5px;border:1px solid rgba(0,0,0,.12);
+  position:relative;
+}
+.zoom-k{
+  width:14px;height:16px;border-radius:50%;
+  background:linear-gradient(145deg,#E0E0DA,#C8C8C2);
+  border:1px solid rgba(0,0,0,.14);
+  box-shadow:0 1px 3px rgba(0,0,0,.15);
+  position:absolute;top:-4px;left:2px;
+}
+.shutter-btn{
+  width:20px;height:20px;border-radius:50%;
+  background:linear-gradient(145deg,#DCDCD6,#C4C4BE);
+  border:1px solid rgba(0,0,0,.14);
+  box-shadow:0 2px 4px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.5);
+}
+
+/* ── MAIN SECTION ── */
+.cmain{display:flex;gap:8px;padding:10px;align-items:center}
+
+/* ── LCD ── */
+.lcd-wrap{flex-shrink:0;display:flex;flex-direction:column;gap:5px}
+.lcd{
+  width:216px;height:163px;
+  background:#111;
+  border-radius:5px;
+  border:2px solid rgba(0,0,0,.22);
+  box-shadow:inset 0 2px 10px rgba(0,0,0,.4),0 1px 2px rgba(255,255,255,.25);
+  position:relative;overflow:hidden;
+  cursor:pointer;
+}
+.slides{position:absolute;inset:0}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity .7s ease}
+.slide.on{opacity:1}
+.slide img{width:100%;height:100%;object-fit:cover;display:block}
+.slide-ph{
+  width:100%;height:100%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+  background:#1A1A1A;
+}
+.slide-ph-icon{font-size:28px;opacity:.3;filter:grayscale(1)}
+.slide-ph-txt{font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.06em}
+
+/* LCD overlay */
+.ov{position:absolute;inset:0;pointer-events:none}
+.ov-top{
+  position:absolute;top:5px;left:6px;right:6px;
+  display:flex;justify-content:space-between;
+}
+.ov-mode{font-size:8px;color:rgba(255,255,255,.65);letter-spacing:.04em}
+.ov-bat{font-size:8px;color:rgba(255,255,255,.55);letter-spacing:0}
+.ov-bot{
+  position:absolute;bottom:8px;left:6px;right:6px;
+  display:flex;justify-content:space-between;align-items:flex-end;
+}
+.ov-ctr{
+  font-size:12px;font-weight:700;color:#fff;
+  text-shadow:0 1px 4px rgba(0,0,0,.7);letter-spacing:.04em;
+}
+.ov-date{
+  font-size:9px;color:#FFB8A0;
+  text-shadow:0 1px 4px rgba(0,0,0,.7);letter-spacing:.06em;
+}
+.ov-prog{
+  position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:rgba(255,255,255,.1);
+}
+.ov-pfill{height:100%;background:rgba(255,255,255,.5);transition:width .4s linear;width:0%}
+
+/* 썸네일 도트 */
+.dots{display:flex;gap:4px;justify-content:center;height:6px}
+.dot{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(0,0,0,.15);transition:all .25s;
+}
+.dot.on{background:#C86070;transform:scale(1.2)}
+
+/* ── CONTROLS ── */
+.ctrl{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;
+}
+.ci-row{display:flex;gap:5px;align-items:center;justify-content:center}
+.ci{
+  width:20px;height:12px;
+  background:linear-gradient(145deg,#E0E0DA,#CECEC8);
+  border-radius:3px;border:1px solid rgba(0,0,0,.1);
+  display:flex;align-items:center;justify-content:center;
+  font-size:7px;color:#666;
+  box-shadow:0 1px 2px rgba(0,0,0,.1);
+}
+.scene-lbl{
+  font-size:7px;font-weight:700;color:#777;
+  letter-spacing:.1em;text-transform:uppercase;
+  background:#E0E0DA;border:1px solid rgba(0,0,0,.1);
+  padding:1px 6px;border-radius:3px;
+}
+.mode-row{display:flex;gap:4px}
+.mbtn{
+  padding:2px 8px;
+  background:linear-gradient(145deg,#E0E0DA,#CECEC8);
+  border-radius:3px;border:1px solid rgba(0,0,0,.12);
+  font-size:9px;color:#555;cursor:pointer;
+  box-shadow:0 1px 2px rgba(0,0,0,.08);
+  font-family:inherit;letter-spacing:.04em;
+}
+.mbtn:hover{background:linear-gradient(145deg,#D8D8D2,#C4C4BE)}
+.mbtn:active{box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
+.mbtn.wide{font-size:7px;font-weight:700;letter-spacing:.1em;padding:2px 10px}
+.mbtn.del{font-size:10px;padding:2px 6px}
+
+/* OK Ring */
+.ok-ring{
+  width:62px;height:62px;border-radius:50%;
+  background:linear-gradient(145deg,#E0E0DA,#C4C4BE);
+  border:1px solid rgba(0,0,0,.12);
+  box-shadow:0 2px 6px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.4);
+  position:relative;display:flex;align-items:center;justify-content:center;
+}
+.ok-ctr{
+  width:26px;height:26px;border-radius:50%;
+  background:linear-gradient(145deg,#EFEFEA,#E0E0DA);
+  border:1px solid rgba(0,0,0,.1);
+  box-shadow:0 1px 3px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.6);
+  display:flex;align-items:center;justify-content:center;
+  font-size:7px;font-weight:700;color:#444;letter-spacing:.04em;
+  cursor:pointer;z-index:1;position:relative;
+  transition:all .12s;
+}
+.ok-ctr:hover{background:linear-gradient(145deg,#E8E8E2,#D8D8D2)}
+.ok-ctr:active{box-shadow:inset 0 1px 3px rgba(0,0,0,.2)}
+.dir{
+  position:absolute;font-size:8px;color:#888;cursor:pointer;
+  transition:color .1s;user-select:none;line-height:1;
+}
+.dir:hover{color:#333}
+.dir-t{top:9px;left:50%;transform:translateX(-50%)}
+.dir-b{bottom:9px;left:50%;transform:translateX(-50%)}
+.dir-l{left:9px;top:50%;transform:translateY(-50%)}
+.dir-r{right:9px;top:50%;transform:translateY(-50%)}
+
+/* ── FOOTER ── */
+.cfoot{
+  background:linear-gradient(180deg,#D8D8D2,#CCCCCA);
+  padding:4px 12px;
+  display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid rgba(0,0,0,.06);
+}
+.cfoot-txt{font-size:8px;color:#888;letter-spacing:.08em}
+.cst{
+  font-size:7px;padding:1px 6px;border-radius:3px;
+  background:rgba(0,0,0,.06);color:#888;letter-spacing:.06em;
+}
+.cst.live{background:rgba(40,180,40,.12);color:#28A745}
+
+/* ── INFO PANEL ── */
+.info-panel{
+  background:#F5F5F0;
+  border-top:1px solid rgba(0,0,0,.07);
+  padding:8px 12px 10px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.ip-row{display:flex;gap:6px;align-items:center}
+.ip-lbl{font-size:9px;color:#888;min-width:70px;letter-spacing:.04em}
+.ip-val{font-size:10px;color:#444;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ip-in{
+  flex:1;background:#fff;border:1px solid rgba(0,0,0,.12);
+  border-radius:4px;padding:3px 7px;font-size:10px;color:#333;
+  outline:none;font-family:inherit;
+}
+.ip-btn{
+  background:#007AFF;color:#fff;border:none;border-radius:4px;
+  padding:3px 10px;font-size:9px;font-weight:500;cursor:pointer;
+  font-family:inherit;flex-shrink:0;
+}
+.ip-btn:hover{background:#0062CC}
+</style>
+</head>
+<body>
+
+<div class="cam" id="cam">
+
+  <!-- 상단 바 -->
+  <div class="ctop">
+    <div class="lens-wrap">
+      <div class="lens"></div>
+      <span class="brand">Itjae</span>
+    </div>
+    <div class="shutter-wrap">
+      <div class="zoom"><div class="zoom-k"></div></div>
+      <div class="shutter-btn"></div>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="cmain">
+    <!-- LCD -->
+    <div class="lcd-wrap">
+      <div class="lcd" onclick="toggleAuto()">
+        <div class="slides" id="slides">
+          <div class="slide on">
+            <div class="slide-ph">
+              <div class="slide-ph-icon">📷</div>
+              <div class="slide-ph-txt">MENU → Notion DB 연결</div>
+            </div>
+          </div>
+        </div>
+        <div class="ov">
+          <div class="ov-top">
+            <span class="ov-mode" id="ov-mode">▶ PLAY</span>
+            <span class="ov-bat">▪▪▪▪</span>
+          </div>
+          <div class="ov-bot">
+            <span class="ov-ctr" id="counter">--/--</span>
+            <span class="ov-date" id="ovdate"></span>
+          </div>
+          <div class="ov-prog"><div class="ov-pfill" id="pfill"></div></div>
+        </div>
+      </div>
+      <div class="dots" id="dots"></div>
+    </div>
+
+    <!-- 컨트롤 -->
+    <div class="ctrl">
+      <div class="ci-row">
+        <div class="ci">⚡</div>
+        <div class="ci" style="font-size:9px">&#9654;</div>
+      </div>
+      <div class="scene-lbl">SCENE</div>
+      <div class="mode-row">
+        <button class="mbtn">&#9679;</button>
+        <button class="mbtn">&#9654;</button>
+      </div>
+      <div class="ok-ring">
+        <span class="dir dir-t" onclick="prevSlide()">▲</span>
+        <span class="dir dir-l" onclick="prevSlide()">◀</span>
+        <div class="ok-ctr" onclick="toggleAuto()">OK</div>
+        <span class="dir dir-r" onclick="nextSlide()">▶</span>
+        <span class="dir dir-b" onclick="nextSlide()">▼</span>
+      </div>
+      <div class="mode-row">
+        <button class="mbtn wide" onclick="toggleMenu()">MENU</button>
+        <button class="mbtn del" onclick="toggleMenu()">&#8505;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 정보 패널 (MENU) -->
+  <div class="info-panel" id="info-panel" style="display:none">
+    <div class="ip-row">
+      <span class="ip-lbl">이미지</span>
+      <span class="ip-val" id="ip-title">—</span>
+    </div>
+    <div class="ip-row">
+      <span class="ip-lbl">Worker URL</span>
+      <input class="ip-in" id="ip-url" type="text" placeholder="https://your-worker.workers.dev" />
+      <button class="ip-btn" onclick="applyWorker()">연결</button>
+    </div>
+  </div>
+
+  <!-- 하단 바 -->
+  <div class="cfoot">
+    <span class="cfoot-txt">ITJAE CAM</span>
+    <span class="cst" id="cst">local</span>
+  </div>
+
+</div>
+
+<script>
+/* ─── CONFIG ────────────────────────────────────────
+   Worker URL 입력 → Notion DB 이미지 로드
+   비워두면 MENU → Worker URL 직접 입력 가능
+──────────────────────────────────────────────────── */
+let WORKER_URL = localStorage.getItem('pw_worker') || '';
+
+let photos = [];
+let cur    = 0;
+let autoOn = false;
+let autoTmr= null;
+let progTmr= null;
+let prog   = 0;
+const AUTO_INTERVAL = 5000; // 5초
+
+/* ─── 초기화 ─── */
+init();
+document.getElementById('ip-url').value = WORKER_URL;
+
+function init() {
+  if (WORKER_URL) fetchPhotos();
+  else renderEmpty();
+}
+
+/* ─── Worker 연결 ─── */
+function applyWorker() {
+  const val = document.getElementById('ip-url').value.trim();
+  WORKER_URL = val;
+  localStorage.setItem('pw_worker', val);
+  if (val) fetchPhotos();
+  toggleMenu();
+}
+
+async function fetchPhotos() {
+  try {
+    const r = await fetch(WORKER_URL + '/photos');
+    const d = await r.json();
+    if (Array.isArray(d.photos) && d.photos.length) {
+      photos = d.photos;
+      cur    = 0;
+      document.getElementById('cst').textContent  = 'live';
+      document.getElementById('cst').classList.add('live');
+      render();
+      startAuto();
+    } else {
+      renderEmpty();
+    }
+  } catch(e) {
+    console.warn('Worker 연결 실패:', e.message);
+    renderEmpty();
+  }
+}
+
+/* ─── 렌더링 ─── */
+function render() {
+  if (!photos.length) { renderEmpty(); return; }
+
+  const el = document.getElementById('slides');
+  el.innerHTML = photos.map((p, i) => `
+    <div class="slide${i === cur ? ' on' : ''}">
+      <img src="${esc(p.url)}" alt="${esc(p.title || '')}" loading="lazy"
+           onerror="this.parentNode.innerHTML='<div class=slide-ph><div class=slide-ph-icon>📷</div><div class=slide-ph-txt>이미지 불러오기 실패</div></div>'">
+    </div>`).join('');
+
+  updateMeta();
+  renderDots();
+}
+
+function renderEmpty() {
+  document.getElementById('slides').innerHTML = `
+    <div class="slide on">
+      <div class="slide-ph">
+        <div class="slide-ph-icon">📷</div>
+        <div class="slide-ph-txt">MENU → DB 연결</div>
+      </div>
+    </div>`;
+  document.getElementById('counter').textContent = '--/--';
+  document.getElementById('ovdate').textContent   = '';
+  document.getElementById('dots').innerHTML       = '';
+}
+
+function updateMeta() {
+  const p = photos[cur];
+  document.getElementById('counter').textContent = String(cur+1).padStart(2,'0') + '/' + String(photos.length).padStart(2,'0');
+  document.getElementById('ovdate').textContent   = p?.date || '';
+  document.getElementById('ip-title').textContent = p?.title || '—';
+}
+
+function renderDots() {
+  const max = Math.min(photos.length, 9);
+  document.getElementById('dots').innerHTML =
+    Array.from({length: max}, (_, i) =>
+      `<div class="dot${i === cur ? ' on' : ''}"></div>`).join('');
+}
+
+/* ─── 슬라이드 이동 ─── */
+function goTo(i) {
+  if (!photos.length) return;
+  cur = (i + photos.length) % photos.length;
+  document.querySelectorAll('.slide').forEach((s, idx) =>
+    s.classList.toggle('on', idx === cur));
+  updateMeta();
+  renderDots();
+  resetProgress();
+}
+
+function nextSlide() { goTo(cur + 1); }
+function prevSlide() { goTo(cur - 1); }
+
+/* ─── 자동 슬라이드 ─── */
+function startAuto() {
+  if (!photos.length) return;
+  autoOn = true;
+  document.getElementById('ov-mode').textContent = '▶▶ AUTO';
+  clearInterval(autoTmr);
+  clearInterval(progTmr);
+  prog = 0;
+  progTmr = setInterval(() => {
+    prog += 100 / (AUTO_INTERVAL / 100);
+    document.getElementById('pfill').style.width = Math.min(prog, 100) + '%';
+    if (prog >= 100) { nextSlide(); prog = 0; }
+  }, 100);
+}
+
+function stopAuto() {
+  autoOn = false;
+  document.getElementById('ov-mode').textContent = '▶ PLAY';
+  clearInterval(progTmr);
+  document.getElementById('pfill').style.width = '0%';
+}
+
+function toggleAuto() {
+  autoOn ? stopAuto() : startAuto();
+}
+
+function resetProgress() {
+  prog = 0;
+  document.getElementById('pfill').style.width = '0%';
+}
+
+/* ─── MENU 패널 ─── */
+function toggleMenu() {
+  const el = document.getElementById('info-panel');
+  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+}
+
+/* ─── 키보드 ─── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') nextSlide();
+  if (e.key === 'ArrowLeft')  prevSlide();
+  if (e.key === ' ')          { e.preventDefault(); toggleAuto(); }
+});
+
+function esc(s) { return (s||'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

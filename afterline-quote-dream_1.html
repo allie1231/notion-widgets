@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Afterline · Dream</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400;1,600&family=Space+Mono:wght@400;700&family=Noto+Serif+KR:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --pk:#FFD4E8; --sk:#C8E4FF; --mid:#E8D4FF;
+  --text:#2C1850; --muted:#A080C0;
+  --ac:#C850A0; --ac2:#5880D0;
+  --glow:rgba(200,80,160,.32); --glow2:rgba(200,80,160,.15);
+  --card:rgba(255,255,255,.58); --cbd:rgba(255,255,255,.82);
+  --ibd:rgba(200,160,220,.2);
+}
+html,body{
+  min-height:100%; font-family:'Space Mono',monospace;
+  background:transparent;
+  display:flex; justify-content:center; align-items:flex-start;
+  padding:24px 16px;
+}
+
+.widget{
+  width:272px; background:rgba(255,248,254,0.96);
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  border:1px solid var(--cbd); border-radius:16px;
+  display:flex; flex-direction:column; min-height:200px;
+  position:relative; overflow:hidden;
+  animation:float 7s ease-in-out infinite;
+  box-shadow:0 8px 32px rgba(200,100,160,.16),0 2px 8px rgba(200,100,160,.1);
+}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-.15deg)}50%{transform:translateY(-6px) rotate(.15deg)}}
+.hdr{padding:9px 14px;border-bottom:1px solid var(--ibd);display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:8px;letter-spacing:.22em;color:var(--muted);font-weight:700}
+.badge{font-size:7px;letter-spacing:.1em;color:var(--muted);border:1px solid var(--ibd);padding:2px 6px;border-radius:2px;transition:all .3s}
+.badge.live{color:var(--ac);border-color:rgba(200,80,160,.3)}
+.qarea{flex:1;padding:18px 16px 14px;position:relative;min-height:140px}
+.qarea::before{
+  content:'\201C';
+  font-family:'Cormorant Garamond',serif;font-size:72px;
+  color:rgba(200,80,160,.1);
+  position:absolute;top:2px;left:10px;line-height:1;pointer-events:none
+}
+.qtext{
+  font-family:'Noto Serif KR','Cormorant Garamond',serif;
+  font-size:13px;font-weight:300;font-style:italic;
+  color:var(--text);line-height:1.9;
+  padding-top:22px;word-break:keep-all;letter-spacing:.02em;
+  min-height:75px;transition:opacity .35s,transform .35s;
+}
+.qtext.fade{opacity:0;transform:translateY(4px)}
+.qsrc{
+  margin-top:11px;padding-top:9px;border-top:1px solid var(--ibd);
+  font-size:8px;color:var(--muted);letter-spacing:.09em;
+  transition:opacity .35s;
+}
+.qsrc.fade{opacity:0}
+.src-t{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:10px;color:rgba(200,80,160,.5)}
+.ftr{padding:8px 14px 10px;border-top:1px solid var(--ibd);display:flex;justify-content:space-between;align-items:center}
+.ngrp{display:flex;gap:12px}
+.nb{font-size:8px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;letter-spacing:.08em;transition:color .12s;padding:0}
+.nb:hover{color:var(--ac)}
+.nb:disabled{opacity:.25;cursor:default}
+.ctr{font-size:8px;color:var(--muted);letter-spacing:.1em}
+.shuf{font-size:8px;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'Space Mono',monospace;transition:color .12s;padding:0}
+.shuf:hover{color:var(--ac)}
+</style>
+</head>
+<body>
+<div class="widget">
+  <div class="hdr">
+    <span class="logo">AFTERLINE</span>
+    <span class="badge" id="badge">SAMPLE</span>
+  </div>
+  <div class="qarea">
+    <p class="qtext" id="qt">문장은 기억이 선택한 형태다.</p>
+    <div class="qsrc" id="qs">
+      <span id="qn"></span><span class="src-t" id="qsrc">— 잇재 아카이브</span>
+    </div>
+  </div>
+  <div class="ftr">
+    <div class="ngrp">
+      <button class="nb" id="bp" onclick="go(-1)">← PREV</button>
+      <button class="nb" id="bn" onclick="go(+1)">NEXT →</button>
+    </div>
+    <span class="ctr" id="ctr">— / —</span>
+    <button class="shuf" onclick="shuffle()">⟳ SHUFFLE</button>
+  </div>
+</div>
+<script>
+/* Worker URL 설정 시 Notion DB 연동 */
+const WORKER_URL='';
+const SAMPLE=[
+  {text:'문장은 기억이 선택한 형태다.',source:'잇재 아카이브',note:''},
+  {text:'읽는다는 것은, 쓰인 것을 빌려 자신을 읽는 일이다.',source:'잇재 아카이브',note:''},
+  {text:'어떤 날들은 문장 한 줄로 기억된다.',source:'잇재 아카이브',note:''},
+  {text:'좋은 문장은 처음 만났을 때부터 오래된 것처럼 느껴진다.',source:'잇재 아카이브',note:''},
+  {text:'쓰는 사람은 세계를 두 번 산다.\n한 번은 경험으로, 한 번은 언어로.',source:'잇재 아카이브',note:''},
+];
+let qs=[...SAMPLE],idx=0;
+function render(){
+  const q=qs[idx];if(!q)return;
+  const qt=document.getElementById('qt'),qs2=document.getElementById('qs');
+  qt.classList.add('fade');qs2.classList.add('fade');
+  setTimeout(()=>{
+    document.getElementById('qt').textContent=q.text||'';
+    document.getElementById('qsrc').textContent=q.source?`— ${q.source}`:'';
+    document.getElementById('qn').textContent=q.note?`${q.note} · `:'';
+    document.getElementById('ctr').textContent=`${String(idx+1).padStart(2,'0')} / ${String(qs.length).padStart(2,'0')}`;
+    qt.classList.remove('fade');qs2.classList.remove('fade');
+  },320);
+  document.getElementById('bp').disabled=idx===0;
+  document.getElementById('bn').disabled=idx===qs.length-1;
+}
+function go(d){idx=Math.max(0,Math.min(qs.length-1,idx+d));render();}
+function shuffle(){idx=Math.floor(Math.random()*qs.length);render();}
+async function fetchWorker(){
+  if(!WORKER_URL)return;
+  try{
+    const r=await fetch(WORKER_URL),d=await r.json();
+    if(Array.isArray(d.quotes)&&d.quotes.length){qs=d.quotes;idx=Math.floor(Math.random()*qs.length);document.getElementById('badge').textContent='LIVE';document.getElementById('badge').classList.add('live');render();}
+  }catch(e){console.warn('Worker 연결 실패:',e.message);}
+}
+idx=Math.floor(Math.random()*qs.length);render();fetchWorker();
+</script>
+</body>
+</html>

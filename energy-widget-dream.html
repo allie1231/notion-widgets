@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy Tracker · Itjae</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;1,300;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --text:#2C1850;--muted:#A080C0;
+  --ac:#C850A0;--ac2:#5880D0;
+  --ibd:rgba(200,160,220,.2);
+  --card:rgba(255,248,254,0.96);--cbd:rgba(255,255,255,.82);
+}
+html,body{min-height:100%;background:transparent;display:flex;justify-content:center;align-items:flex-start;padding:16px;font-family:'Space Mono',monospace;}
+.widget{width:260px;background:var(--card);border:1px solid var(--cbd);border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(200,100,160,.12);animation:float 6s ease-in-out infinite;}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.hdr{padding:9px 13px;border-bottom:1px solid var(--ibd);display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:8px;letter-spacing:.22em;color:var(--muted);font-weight:700}
+.st{font-size:7px;color:var(--muted);letter-spacing:.1em}.st.live{color:var(--ac)}
+.garea{padding:14px 14px 6px;}
+.gsvg{width:100%;display:block;}
+.dlabels{display:flex;justify-content:space-between;padding:5px 0 8px;border-bottom:1px solid var(--ibd);}
+.dl{font-size:7px;color:var(--muted);text-align:center;width:14.28%;letter-spacing:.04em}
+.dl.today{color:var(--ac);font-weight:700}
+.yl{font-size:6px;color:rgba(160,128,192,.4);letter-spacing:.06em}
+.today-row{padding:8px 13px 12px;display:flex;flex-direction:column;gap:6px;}
+.tlbl{font-size:8px;color:var(--muted);letter-spacing:.12em}
+.ebns{display:flex;gap:6px;}
+.eb{flex:1;padding:7px 0;border:1px solid var(--ibd);border-radius:8px;font-size:9px;font-family:'Space Mono',monospace;color:var(--muted);background:transparent;cursor:pointer;letter-spacing:.06em;transition:all .15s;}
+.eb:hover{border-color:rgba(200,160,220,.4);color:var(--text)}
+.on-low{background:rgba(88,128,208,.1)!important;border-color:rgba(88,128,208,.35)!important;color:var(--ac2)!important}
+.on-mid{background:rgba(144,96,192,.1)!important;border-color:rgba(144,96,192,.3)!important;color:#9060C0!important}
+.on-hi{background:rgba(200,80,160,.1)!important;border-color:rgba(200,80,160,.3)!important;color:var(--ac)!important}
+</style>
+</head>
+<body>
+<div class="widget">
+  <div class="hdr">
+    <span class="logo">ENERGY TRACKER</span>
+    <span class="st" id="st">LOCAL</span>
+  </div>
+  <div class="garea">
+    <svg class="gsvg" id="gsvg" viewBox="0 0 232 56" aria-label="이번 주 에너지 그래프" role="img"></svg>
+    <div class="dlabels" id="dlabels"></div>
+  </div>
+  <div class="today-row">
+    <div class="tlbl">TODAY —</div>
+    <div class="ebns">
+      <button class="eb" data-v="LOW"    onclick="setE(this)">LOW</button>
+      <button class="eb" data-v="MEDIUM" onclick="setE(this)">MED</button>
+      <button class="eb" data-v="HIGH"   onclick="setE(this)">HIGH</button>
+    </div>
+  </div>
+</div>
+<script>
+/* ─── CONFIG ─── */
+const WORKER_URL=''; // 'https://tracker.YOUR_NAME.workers.dev'
+
+const W=232,H=56,PX=16;
+const YP={LOW:H-8,MEDIUM:H/2,HIGH:9};
+const CLS={LOW:'on-low',MEDIUM:'on-mid',HIGH:'on-hi'};
+const DAYS=['Mo','Tu','We','Th','Fr','Sa','Su'];
+
+let data=JSON.parse(localStorage.getItem('en_d')||'{}');
+
+function wstart(){const n=new Date(),d=n.getDay();n.setDate(n.getDate()-(d===0?6:d-1));n.setHours(0,0,0,0);return n;}
+function wdays(){const s=wstart();return Array.from({length:7},(_,i)=>{const d=new Date(s);d.setDate(s.getDate()+i);return d.toISOString().slice(0,10);});}
+const WD=wdays(), TODAY=new Date().toISOString().slice(0,10);
+
+function draw(){
+  const xs=WD.map((_,i)=>PX+i*(W-PX*2)/6);
+  const pts=WD.map((d,i)=>data[d]?{x:xs[i],y:YP[data[d]],date:d}:null).filter(Boolean);
+  let svg=`<defs>
+    <linearGradient id="gl" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C850A0" stop-opacity=".7"/>
+      <stop offset="100%" stop-color="#5880D0" stop-opacity=".7"/>
+    </linearGradient>
+  </defs>
+  <line x1="${PX}" y1="${YP.HIGH}"   x2="${W-PX}" y2="${YP.HIGH}"   stroke="rgba(200,160,220,.15)" stroke-width=".5"/>
+  <line x1="${PX}" y1="${YP.MEDIUM}" x2="${W-PX}" y2="${YP.MEDIUM}" stroke="rgba(200,160,220,.15)" stroke-width=".5"/>
+  <line x1="${PX}" y1="${YP.LOW}"    x2="${W-PX}" y2="${YP.LOW}"    stroke="rgba(200,160,220,.15)" stroke-width=".5"/>
+  <text x="${PX-2}" y="${YP.HIGH+1}"   text-anchor="end" class="yl" style="font-size:5px;fill:rgba(160,128,192,.4)">H</text>
+  <text x="${PX-2}" y="${YP.MEDIUM+1}" text-anchor="end" class="yl" style="font-size:5px;fill:rgba(160,128,192,.4)">M</text>
+  <text x="${PX-2}" y="${YP.LOW+1}"    text-anchor="end" class="yl" style="font-size:5px;fill:rgba(160,128,192,.4)">L</text>`;
+  if(pts.length>1){const pd=pts.map((p,i)=>`${i===0?'M':'L'}${p.x},${p.y}`).join(' ');svg+=`<path d="${pd}" fill="none" stroke="url(#gl)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`;}
+  pts.forEach(p=>{
+    const it=p.date===TODAY;
+    if(it)svg+=`<circle cx="${p.x}" cy="${p.y}" r="7" fill="rgba(200,80,160,.08)"/>`;
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="${it?3.5:2.5}" fill="${it?'#C850A0':'rgba(200,80,160,.45)'}"/>`;
+  });
+  document.getElementById('gsvg').innerHTML=svg;
+  document.getElementById('dlabels').innerHTML=WD.map((d,i)=>`<span class="dl${d===TODAY?' today':''}">${DAYS[i]}</span>`).join('');
+}
+
+function setE(el){
+  const v=el.dataset.v;
+  data[TODAY]=v;
+  localStorage.setItem('en_d',JSON.stringify(data));
+  document.querySelectorAll('.eb').forEach(b=>{b.className='eb';});
+  el.classList.add(CLS[v]);
+  draw();
+  if(WORKER_URL){fetch(WORKER_URL+'/energy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:TODAY,energy:v})}).catch(e=>console.warn(e));}
+}
+
+async function pull(){
+  if(!WORKER_URL)return;
+  try{const r=await fetch(WORKER_URL+'/energy'),d=await r.json();
+    if(d.data){data={...d.data,...data};localStorage.setItem('en_d',JSON.stringify(data));draw();document.getElementById('st').textContent='LIVE';document.getElementById('st').classList.add('live');}
+  }catch(e){console.warn(e);}
+}
+
+if(data[TODAY]){document.querySelectorAll('.eb').forEach(b=>{if(b.dataset.v===data[TODAY])b.classList.add(CLS[data[TODAY]])});}
+draw(); pull();
+</script>
+</body>
+</html>

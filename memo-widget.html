@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="ko"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Memo OS</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:transparent;display:flex;justify-content:center;align-items:flex-start;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif}
+.win{border-radius:12px;border:.5px solid rgba(0,0,0,.12);background:#fff;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05)}
+.tb{background:#EBEBEB;padding:8px 12px 7px;display:flex;align-items:center;border-bottom:.5px solid rgba(0,0,0,.1)}
+.tls{display:flex;gap:5px}.tl{width:11px;height:11px;border-radius:50%}
+.wt{flex:1;font-size:12px;font-weight:500;color:#3C3C3C;text-align:center}.sp{width:42px}
+.win{width:284px}
+.fbar{display:flex;gap:4px;padding:6px 10px;border-bottom:.5px solid rgba(0,0,0,.07);background:#FAFAFA;overflow-x:auto}
+.fbar::-webkit-scrollbar{display:none}
+.fc{font-size:10px;padding:3px 10px;border-radius:99px;border:.5px solid rgba(0,0,0,.12);color:#636366;background:transparent;white-space:nowrap;cursor:pointer;transition:all .12s;font-family:inherit}
+.fc.on{background:#1C1C1E;color:#fff;border-color:transparent}
+.list{min-height:110px;max-height:200px;overflow-y:auto}
+.list::-webkit-scrollbar{width:3px}.list::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:2px}
+.mrow{display:flex;gap:8px;padding:7px 12px;border-bottom:.5px solid rgba(0,0,0,.06);align-items:flex-start;cursor:default}
+.mrow:last-child{border-bottom:none}
+.mtag{font-size:8px;padding:2px 6px;border-radius:3px;flex-shrink:0;margin-top:2px;font-weight:500}
+.t-memo{background:#F2F2F7;color:#636366}
+.t-idea{background:#EEE4FF;color:#5E35B1}
+.t-todo{background:#E3F2FD;color:#1565C0}
+.t-quote{background:#FFEEF4;color:#C2185B}
+.t-work{background:#E8F5E9;color:#2E7D32}
+.mtxt{font-size:12px;color:#1C1C1E;flex:1;line-height:1.55;word-break:keep-all}
+.mtime{font-size:10px;color:#C7C7CC;flex-shrink:0;margin-top:2px}
+.empty-msg{text-align:center;padding:24px 0;font-size:12px;color:#C7C7CC}
+.inp-row{display:flex;align-items:center;border-top:.5px solid rgba(0,0,0,.08)}
+.minp{flex:1;background:transparent;border:none;padding:8px 12px;font-size:12px;color:#1C1C1E;outline:none;font-family:inherit}
+.minp::placeholder{color:#C7C7CC}
+.sbtn{background:#007AFF;color:#fff;border:none;padding:8px 14px;font-size:11px;font-weight:500;font-family:inherit;cursor:pointer;border-left:.5px solid rgba(0,0,0,.08)}
+.sbtn:hover{background:#0062CC}
+.st{font-size:9px;padding:2px 7px;border-radius:3px;background:#F2F2F7;color:#8E8E93}
+.st.live{background:#E8F8E8;color:#28A745}
+</style></head><body>
+<div class="win">
+  <div class="tb"><div class="tls"><div class="tl" style="background:#FF5F57"></div><div class="tl" style="background:#FFBD2E"></div><div class="tl" style="background:#28C840"></div></div><div class="wt">Memo OS</div><div class="sp" style="display:flex;justify-content:flex-end;align-items:center"><span class="st" id="st">local</span></div></div>
+  <div class="fbar">
+    <button class="fc on" data-tag="all"   onclick="setF(this)">All</button>
+    <button class="fc"    data-tag="MEMO"  onclick="setF(this)">Memo</button>
+    <button class="fc"    data-tag="IDEA"  onclick="setF(this)">Idea</button>
+    <button class="fc"    data-tag="TODO"  onclick="setF(this)">Todo</button>
+    <button class="fc"    data-tag="QUOTE" onclick="setF(this)">Quote</button>
+    <button class="fc"    data-tag="WORK"  onclick="setF(this)">Work</button>
+  </div>
+  <div class="list" id="list"></div>
+  <div class="inp-row">
+    <input class="minp" id="minp" type="text" placeholder="메모를 입력하세요..." />
+    <button class="sbtn" onclick="send()">Send</button>
+  </div>
+</div>
+<script>
+const WORKER_URL='';
+const TAGS={MEMO:'t-memo',IDEA:'t-idea',TODO:'t-todo',QUOTE:'t-quote',WORK:'t-work'};
+let memos=JSON.parse(localStorage.getItem('mo_memos')||'[]'),filter='all',sending=false;
+function setF(el){document.querySelectorAll('.fc').forEach(b=>b.classList.remove('on'));el.classList.add('on');filter=el.dataset.tag;render();}
+function render(){
+  const el=document.getElementById('list');
+  const shown=filter==='all'?memos:memos.filter(m=>m.tag===filter);
+  if(!shown.length){el.innerHTML='<div class="empty-msg">메모가 없습니다</div>';return;}
+  el.innerHTML=shown.slice(-40).reverse().map(m=>`<div class="mrow"><span class="mtag ${TAGS[m.tag]||'t-memo'}">${m.tag||'MEMO'}</span><span class="mtxt">${esc(m.text)}</span><span class="mtime">${m.time||''}</span></div>`).join('');
+}
+async function send(){
+  const inp=document.getElementById('minp');const txt=inp.value.trim();if(!txt||sending)return;sending=true;
+  const m={id:Date.now(),text:txt,tag:document.querySelector('.fc[data-tag]:not([data-tag="all"]).on')?.dataset.tag||memos.length?'MEMO':'MEMO',time:new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})};
+  memos.push(m);localStorage.setItem('mo_memos',JSON.stringify(memos.slice(-100)));inp.value='';render();
+  if(WORKER_URL){try{await fetch(WORKER_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:m.text,tag:m.tag})});}catch(e){console.warn(e);}}
+  sending=false;
+}
+async function pull(){if(!WORKER_URL)return;try{const r=await fetch(WORKER_URL),d=await r.json();if(Array.isArray(d.memos)&&d.memos.length){memos=d.memos.reverse();localStorage.setItem('mo_memos',JSON.stringify(memos));render();const s=document.getElementById('st');s.textContent='live';s.classList.add('live');}}catch(e){console.warn(e);}}
+function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+document.getElementById('minp').addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+render();pull();
+</script></body></html>

@@ -1,0 +1,271 @@
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<h2 class="sr-only">아이팟 스타일 유튜브 뮤직 플레이어</h2>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+.wrap{display:flex;justify-content:center;padding:28px 0 36px}
+.ipod{width:300px;border-radius:26px;padding:14px 13px 22px;background:repeating-linear-gradient(0deg,transparent,transparent 1.5px,rgba(255,255,255,.022) 1.5px,rgba(255,255,255,.022) 3px),linear-gradient(158deg,#e3e3e3,#ccc 15%,#b9b9b9 50%,#c6c6c6 75%,#dadada);box-shadow:inset 0 1.5px 0 rgba(255,255,255,.75),inset 0 -1.5px 0 rgba(0,0,0,.22),inset 3px 0 3px rgba(255,255,255,.22),inset -3px 0 3px rgba(0,0,0,.07),0 1px 0 rgba(0,0,0,.5),0 24px 64px rgba(0,0,0,.6),0 8px 24px rgba(0,0,0,.3),0 3px 6px rgba(0,0,0,.2)}
+.bezel{background:#040406;border-radius:11px;padding:3.5px;margin-bottom:13px;box-shadow:inset 0 3px 10px rgba(0,0,0,.9),0 1px 0 rgba(255,255,255,.22);position:relative}
+.bezel::before{content:'';position:absolute;top:3.5px;left:3.5px;right:3.5px;height:38%;border-radius:7.5px 7.5px 0 0;background:linear-gradient(to bottom,rgba(255,255,255,.065),transparent);pointer-events:none;z-index:10}
+.screen{width:100%;height:186px;border-radius:8px;overflow:hidden;background:#0b1520;position:relative}
+.v-menu{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px 14px;background:linear-gradient(155deg,#1e3050,#0d1a2e 55%,#070e1a);transition:opacity .28s}
+.v-menu.off{opacity:0;pointer-events:none}
+.m-brand{font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;letter-spacing:4.5px;text-transform:uppercase;color:rgba(215,235,255,.8)}
+.m-brand small{display:block;font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(140,180,230,.45);text-align:center;margin-top:3px}
+.m-row{display:flex;gap:5px;width:100%}
+.m-input{flex:1;min-width:0;background:rgba(255,255,255,.065);border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:5px 8px;color:rgba(255,255,255,.88);font-family:'DM Mono',monospace;font-size:10px;font-weight:300;outline:none;transition:border-color .18s,background .18s;-webkit-appearance:none}
+.m-input:focus{border-color:rgba(100,165,255,.42);background:rgba(255,255,255,.09)}
+.m-input::placeholder{color:rgba(255,255,255,.2);font-size:9.5px}
+.m-btn{background:rgba(80,140,255,.16);border:1px solid rgba(80,160,255,.28);border-radius:5px;color:rgba(140,200,255,.9);font-family:'Nunito',sans-serif;font-size:8.5px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:5px 10px;cursor:pointer;flex-shrink:0;transition:background .15s}
+.m-btn:hover{background:rgba(80,140,255,.26)}
+.m-btn:active{transform:scale(.95)}
+.m-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.m-hint{font-family:'DM Mono',monospace;font-size:9px;font-weight:300;color:rgba(255,255,255,.22);text-align:center;line-height:1.55}
+.m-hint.err{color:rgba(255,100,80,.75)}
+.v-np{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .28s}
+.v-np.on{opacity:1;pointer-events:all}
+.np-bg{position:absolute;inset:-20px;background-size:cover;background-position:center;filter:blur(18px) brightness(.3) saturate(1.5)}
+.np-upper{position:relative;z-index:1;flex:1;display:flex;align-items:center;gap:11px;padding:14px 12px 6px}
+.np-art{width:82px;height:82px;border-radius:7px;object-fit:cover;box-shadow:0 4px 14px rgba(0,0,0,.6);flex-shrink:0;background:rgba(255,255,255,.04)}
+.np-meta{flex:1;min-width:0}
+.np-tracknum{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(255,255,255,.3);text-transform:uppercase;margin-bottom:5px}
+.np-titlerow{overflow:hidden;white-space:nowrap;margin-bottom:3px}
+.np-title{display:inline-block;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:rgba(255,255,255,.95);white-space:nowrap}
+.np-title.scroll{animation:np-scroll 9s linear infinite;padding-right:32px}
+@keyframes np-scroll{0%{transform:translateX(0)}100%{transform:translateX(-100%)}}
+.np-artist{font-family:'Nunito',sans-serif;font-size:9.5px;font-weight:700;color:rgba(255,255,255,.48);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:7px}
+.np-eq{display:flex;align-items:flex-end;gap:2.5px;height:12px}
+.np-eq-b{width:3px;border-radius:1px;background:rgba(100,180,255,.45)}
+.np-eq-b:nth-child(1){height:4px}.np-eq-b:nth-child(2){height:8px}.np-eq-b:nth-child(3){height:5px}.np-eq-b:nth-child(4){height:10px}.np-eq-b:nth-child(5){height:3px}
+.np-eq.play .np-eq-b:nth-child(1){animation:eq1 .55s ease-in-out infinite alternate}
+.np-eq.play .np-eq-b:nth-child(2){animation:eq2 .42s ease-in-out infinite alternate .08s}
+.np-eq.play .np-eq-b:nth-child(3){animation:eq3 .68s ease-in-out infinite alternate .2s}
+.np-eq.play .np-eq-b:nth-child(4){animation:eq4 .38s ease-in-out infinite alternate .04s}
+.np-eq.play .np-eq-b:nth-child(5){animation:eq5 .6s ease-in-out infinite alternate .15s}
+@keyframes eq1{from{height:3px}to{height:9px}}@keyframes eq2{from{height:4px}to{height:11px}}
+@keyframes eq3{from{height:3px}to{height:8px}}@keyframes eq4{from{height:5px}to{height:12px}}
+@keyframes eq5{from{height:2px}to{height:7px}}
+.np-eq.pause .np-eq-b{height:2px !important;background:rgba(100,180,255,.2)}
+.np-eq.buf .np-eq-b{animation:buf-blink .9s ease-in-out infinite;background:rgba(255,200,100,.4)}
+.np-eq.buf .np-eq-b:nth-child(2){animation-delay:.15s}.np-eq.buf .np-eq-b:nth-child(3){animation-delay:.3s}
+@keyframes buf-blink{0%,100%{height:2px;opacity:.3}50%{height:8px;opacity:.9}}
+.np-lower{position:relative;z-index:1;padding:2px 12px 12px}
+.np-times{display:flex;justify-content:space-between;margin-bottom:4px}
+.np-t{font-family:'DM Mono',monospace;font-size:8.5px;font-weight:300;color:rgba(255,255,255,.48)}
+.np-prog{height:2.5px;background:rgba(255,255,255,.1);border-radius:2px;cursor:pointer;position:relative}
+.np-fill{height:100%;background:linear-gradient(90deg,rgba(110,185,255,.85),rgba(175,215,255,.95));border-radius:2px;width:0%;transition:width .5s linear;position:relative}
+.np-fill::after{content:'';position:absolute;right:-4px;top:50%;transform:translateY(-50%);width:9px;height:9px;border-radius:50%;background:rgba(190,220,255,1);box-shadow:0 0 5px rgba(100,180,255,.9)}
+.wheel-section{display:flex;flex-direction:column;align-items:center}
+.music-lbl{font-family:'Nunito',sans-serif;font-size:9px;font-weight:800;letter-spacing:5px;text-transform:uppercase;color:rgba(72,72,72,.78);margin-bottom:9px;cursor:pointer;user-select:none;transition:color .15s}
+.music-lbl:hover{color:rgba(40,40,40,.9)}
+.wheel{width:206px;height:206px;border-radius:50%;background:radial-gradient(circle at 36% 32%,rgba(255,255,255,.75) 0%,transparent 52%),linear-gradient(145deg,#f2f2f2,#e5e5e5 35%,#d8d8d8 65%,#e8e8e8);position:relative;box-shadow:inset 0 2px 4px rgba(255,255,255,.95),inset 0 -2px 5px rgba(0,0,0,.14),inset 3px 0 4px rgba(255,255,255,.5),inset -3px 0 4px rgba(0,0,0,.07),0 6px 18px rgba(0,0,0,.22),0 2px 6px rgba(0,0,0,.14)}
+.wheel::before{content:'';position:absolute;top:14%;left:14%;right:14%;bottom:14%;border-radius:50%;box-shadow:0 0 0 .5px rgba(0,0,0,.065),inset 0 0 0 .5px rgba(255,255,255,.5);pointer-events:none}
+.wb{position:absolute;background:none;border:none;cursor:pointer;color:rgba(95,95,95,.85);display:flex;align-items:center;justify-content:center;user-select:none;-webkit-tap-highlight-color:transparent;transition:color .12s;z-index:2;font-size:13px}
+.wb:hover{color:rgba(40,40,40,.9)}
+.wb:active{color:rgba(20,20,20,.95)}
+.wb-prev{left:14px;top:50%;transform:translateY(-50%);width:42px;height:54px;letter-spacing:-4px}
+.wb-prev:active{transform:translateY(-50%) scale(.88)}
+.wb-next{right:14px;top:50%;transform:translateY(-50%);width:42px;height:54px;letter-spacing:-4px}
+.wb-next:active{transform:translateY(-50%) scale(.88)}
+.wb-play{bottom:15px;left:50%;transform:translateX(-50%);width:56px;height:36px;font-size:11px;letter-spacing:1.5px}
+.wb-play:active{transform:translateX(-50%) scale(.88)}
+.wc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:74px;height:74px;border-radius:50%;border:none;cursor:pointer;background:radial-gradient(circle at 40% 36%,#f0f0f0,#d5d5d5 62%,#c8c8c8);box-shadow:inset 0 1.5px 3px rgba(255,255,255,.95),inset 0 -1.5px 4px rgba(0,0,0,.17),0 3px 9px rgba(0,0,0,.22),0 1px 3px rgba(0,0,0,.12);z-index:3;-webkit-tap-highlight-color:transparent;transition:transform .1s,box-shadow .1s}
+.wc:active{transform:translate(-50%,-50%) scale(.94);box-shadow:inset 0 3px 6px rgba(0,0,0,.24),inset 0 -1px 2px rgba(255,255,255,.55),0 1px 2px rgba(0,0,0,.12)}
+</style>
+
+<div style="overflow:hidden;width:1px;height:1px;opacity:0;pointer-events:none;float:left">
+  <iframe id="ytF" width="320" height="180" frameborder="0" allow="autoplay;encrypted-media" allowfullscreen></iframe>
+</div>
+
+<div class="wrap">
+  <div class="ipod">
+    <div class="bezel">
+      <div class="screen">
+        <div class="v-menu" id="vMenu">
+          <div class="m-brand">iPod <small>youtube player</small></div>
+          <div class="m-row">
+            <input class="m-input" id="mInput" type="url" placeholder="YouTube URL 붙여넣기..." autocomplete="off" spellcheck="false">
+            <button class="m-btn" id="mBtn">LOAD</button>
+          </div>
+          <div class="m-hint" id="mHint">YouTube 링크를 붙여넣고 LOAD를 눌러요</div>
+        </div>
+        <div class="v-np" id="vNP">
+          <div class="np-bg" id="npBg"></div>
+          <div class="np-upper">
+            <img class="np-art" id="npArt" src="" alt="">
+            <div class="np-meta">
+              <div class="np-tracknum" id="npTrack">NOW PLAYING</div>
+              <div class="np-titlerow"><span class="np-title" id="npTitle">—</span></div>
+              <div class="np-artist" id="npArtist">—</div>
+              <div class="np-eq" id="npEq">
+                <div class="np-eq-b"></div><div class="np-eq-b"></div><div class="np-eq-b"></div>
+                <div class="np-eq-b"></div><div class="np-eq-b"></div>
+              </div>
+            </div>
+          </div>
+          <div class="np-lower">
+            <div class="np-times"><span class="np-t" id="tCur">0:00</span><span class="np-t" id="tDur">0:00</span></div>
+            <div class="np-prog" id="npProg"><div class="np-fill" id="npFill"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="wheel-section">
+      <div class="music-lbl" id="musicLbl">MUSIC</div>
+      <div class="wheel">
+        <button class="wb wb-prev" id="wbPrev" aria-label="이전">◀◀</button>
+        <button class="wb wb-next" id="wbNext" aria-label="다음">▶▶</button>
+        <button class="wb wb-play" id="wbPlay" aria-label="재생/일시정지">▶ ‖</button>
+        <button class="wc" id="wc" aria-label="재생/일시정지"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const ytF=$('ytF');
+let view='menu',playing=false,ytLoaded=false,hasList=false;
+let dur=0,cur=0,ticker=null;
+const D={
+  mInput:$('mInput'),mBtn:$('mBtn'),mHint:$('mHint'),
+  vMenu:$('vMenu'),vNP:$('vNP'),
+  npBg:$('npBg'),npArt:$('npArt'),npTrack:$('npTrack'),
+  npTitle:$('npTitle'),npArtist:$('npArtist'),npEq:$('npEq'),
+  tCur:$('tCur'),tDur:$('tDur'),npFill:$('npFill'),npProg:$('npProg'),
+  musicLbl:$('musicLbl'),wbPrev:$('wbPrev'),wbNext:$('wbNext'),
+  wbPlay:$('wbPlay'),wc:$('wc'),
+};
+
+function parseYT(raw){
+  raw=raw.trim();let v=null,list=null;
+  try{
+    const u=new URL(raw);const h=u.hostname.replace('www.','');
+    if(h==='youtu.be'){v=u.pathname.slice(1);list=u.searchParams.get('list');}
+    else if(h==='youtube.com'){v=u.searchParams.get('v');list=u.searchParams.get('list');}
+  }catch{
+    const vm=raw.match(/(?:[?&v=\/]|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+    const lm=raw.match(/list=([A-Za-z0-9_-]+)/);
+    if(vm)v=vm[1];if(lm)list=lm[1];
+  }
+  return{v,list};
+}
+
+function loadURL(){
+  const url=D.mInput.value.trim();
+  if(!url){hint('URL을 입력해 주세요',true);return;}
+  const{v,list}=parseYT(url);
+  if(!v&&!list){hint('올바른 YouTube URL을 입력해 주세요',true);return;}
+  hint('로딩 중...',false);
+  D.mBtn.disabled=true;D.mBtn.textContent='···';
+  hasList=!!list;ytLoaded=false;playing=false;cur=0;dur=0;
+  D.npFill.style.width='0%';D.tCur.textContent='0:00';D.tDur.textContent='0:00';
+  D.npTitle.textContent='—';D.npArtist.textContent='—';D.npTrack.textContent='NOW PLAYING';
+  D.npArt.src='';D.npBg.style.backgroundImage='';D.npEq.className='np-eq';
+  let src='https://www.youtube.com/embed/'+(v?v:(list?'videoseries':''));
+  src+='?enablejsapi=1&autoplay=0&controls=0&playsinline=1&modestbranding=1&rel=0&fs=0&iv_load_policy=3';
+  if(list)src+=`&listType=playlist&list=${list}`;
+  ytF.src=src;
+}
+
+ytF.addEventListener('load',()=>{
+  if(!ytF.src.includes('youtube.com'))return;
+  D.mBtn.disabled=false;D.mBtn.textContent='LOAD';
+  ytLoaded=true;goNP();
+  setTimeout(()=>{
+    ytF.contentWindow?.postMessage(JSON.stringify({event:'listening',id:1}),'*');
+  },800);
+});
+
+window.addEventListener('message',e=>{
+  if(!e.origin.includes('youtube.com'))return;
+  try{
+    const d=JSON.parse(e.data);
+    if(d.event==='onStateChange'){
+      const s=d.info;
+      if(s===1){playing=true;D.npEq.className='np-eq play';startTick();}
+      else if(s===2||s===0){playing=false;D.npEq.className='np-eq pause';stopTick();}
+      else if(s===3){D.npEq.className='np-eq buf';}
+    }
+    if((d.event==='infoDelivery'||d.event==='initialDelivery')&&d.info){
+      const info=d.info;
+      if(typeof info.currentTime==='number')cur=info.currentTime;
+      if(typeof info.duration==='number')dur=info.duration;
+      D.tCur.textContent=fmt(cur);D.tDur.textContent=fmt(dur);
+      if(dur>0)D.npFill.style.width=`${(cur/dur*100).toFixed(2)}%`;
+      if(info.videoData?.title){
+        const{title='—',author='—',video_id:vid}=info.videoData;
+        if(D.npTitle.textContent!==title){
+          D.npTitle.textContent=title;D.npArtist.textContent=author;
+          D.npTitle.classList.toggle('scroll',D.npTitle.scrollWidth>D.npTitle.parentElement.offsetWidth+4);
+          if(vid){const th=`https://img.youtube.com/vi/${vid}/mqdefault.jpg`;D.npArt.src=th;D.npBg.style.backgroundImage=`url(${th})`;}
+        }
+      }
+      if(typeof info.playlistIndex==='number'){
+        const tot=info.playlist?.length;
+        D.npTrack.textContent=tot?`TRACK ${info.playlistIndex+1} / ${tot}`:`TRACK ${info.playlistIndex+1}`;
+      }
+    }
+  }catch(_){}
+});
+
+function startTick(){
+  stopTick();
+  ticker=setInterval(()=>{
+    if(!playing)return;
+    cur+=0.5;
+    D.tCur.textContent=fmt(cur);
+    if(dur>0)D.npFill.style.width=`${Math.min(100,cur/dur*100).toFixed(2)}%`;
+  },500);
+}
+function stopTick(){clearInterval(ticker);ticker=null;}
+function fmt(s){s=Math.max(0,Math.floor(s||0));return`${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
+
+function goMenu(){view='menu';D.vMenu.classList.remove('off');D.vNP.classList.remove('on');}
+function goNP(){view='np';D.vMenu.classList.add('off');D.vNP.classList.add('on');}
+function hint(msg,err){D.mHint.textContent=msg;D.mHint.className=err?'m-hint err':'m-hint';}
+
+function ytCmd(fn,args=[]){
+  ytF.contentWindow?.postMessage(JSON.stringify({event:'command',func:fn,args}),'https://www.youtube.com');
+}
+
+function togglePlay(){
+  if(!ytLoaded){D.mInput.focus();return;}
+  playing?ytCmd('pauseVideo'):ytCmd('playVideo');
+}
+function prevTrack(){
+  if(!ytLoaded)return;
+  hasList?ytCmd('previousVideo'):ytCmd('seekTo',[Math.max(0,cur-10),true]);
+}
+function nextTrack(){
+  if(!ytLoaded)return;
+  hasList?ytCmd('nextVideo'):ytCmd('seekTo',[Math.min(dur,cur+10),true]);
+}
+
+D.mBtn.addEventListener('click',loadURL);
+D.mInput.addEventListener('keydown',e=>e.key==='Enter'&&loadURL());
+D.wc.addEventListener('click',togglePlay);
+D.wbPlay.addEventListener('click',togglePlay);
+D.wbPrev.addEventListener('click',prevTrack);
+D.wbNext.addEventListener('click',nextTrack);
+D.musicLbl.addEventListener('click',()=>view==='np'?goMenu():(ytLoaded&&goNP()));
+
+D.npProg.addEventListener('click',e=>{
+  if(!ytLoaded||!dur)return;
+  const rect=D.npProg.getBoundingClientRect();
+  const ratio=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width));
+  D.npFill.style.transition='none';
+  D.npFill.style.width=`${ratio*100}%`;
+  requestAnimationFrame(()=>D.npFill.style.transition='');
+  cur=ratio*dur;ytCmd('seekTo',[cur,true]);
+  D.tCur.textContent=fmt(cur);
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.target===D.mInput)return;
+  if(e.code==='Space'){e.preventDefault();togglePlay();}
+  if(e.code==='ArrowLeft')prevTrack();
+  if(e.code==='ArrowRight')nextTrack();
+  if(e.code==='Escape')view==='np'?goMenu():(ytLoaded&&goNP());
+});
+</script>

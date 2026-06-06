@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Pass Widget - sage</title>
+  <style>
+    :root {
+      --paper: #fffdf6;
+      --cream: #f3f6e9;
+      --pink: #eaded8;
+      --blue: #e4ece7;
+      --green: #dce8d4;
+      --yellow: #f2e9bc;
+      --line: #4d5a4d;
+      --muted: #818a78;
+      --soft-line: rgba(77, 90, 77, 0.18);
+      --shadow: rgba(77, 90, 77, 0.10);
+      --selected: #edf5df;
+      --selected-line: #9eb48a;
+      --header-bg: #f3f6e9;
+      --box-bg: #ffffff96;
+      --cell-bg: #ffffff78;
+      --stub-bg: #f8faef;
+      --button-bg: #dce8d4;
+      --plane-bg: #dce8d4;
+      --badge-bg: #ffffff96;
+      --progress-bg: #eef4df;
+      --progress-border: #b1c49a;
+      --accent: #9eb48a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f7f3ea;
+      color: var(--line);
+      font-family: "SF Mono", "IBM Plex Mono", "Roboto Mono", "Space Mono",
+        ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    .shell {
+      width: min(390px, 100vw);
+      padding: 14px;
+    }
+
+    .ticket-wrap {
+      position: relative;
+      filter: drop-shadow(0 18px 38px var(--shadow));
+    }
+
+    .ticket {
+      position: relative;
+      overflow: hidden;
+      border: 1.5px solid rgba(79, 86, 81, 0.64);
+      border-radius: 26px;
+      background: var(--paper);
+    }
+
+    .ticket::before,
+    .ticket::after {
+      content: "";
+      position: absolute;
+      z-index: 4;
+      width: 28px;
+      height: 28px;
+      top: 54%;
+      border-radius: 999px;
+      background: #f7f3ea;
+      border: 1.5px solid rgba(79, 86, 81, 0.64);
+    }
+
+    .ticket::before {
+      left: -16px;
+    }
+
+    .ticket::after {
+      right: -16px;
+    }
+
+    .inner-border {
+      position: absolute;
+      inset: 9px;
+      border: 1px solid rgba(79, 86, 81, 0.14);
+      border-radius: 20px;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: start;
+      padding: 22px 22px 16px;
+      background: var(--header-bg);
+      border-bottom: 1px dashed rgba(79, 86, 81, 0.28);
+    }
+
+    .eyebrow {
+      margin-bottom: 5px;
+      font-size: 9px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: #49654f;
+    }
+
+    .badge {
+      min-width: 62px;
+      padding: 6px 8px;
+      border: 1px solid rgba(79, 86, 81, 0.22);
+      border-radius: 999px;
+      background: var(--box-bg);
+      text-align: center;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--line);
+    }
+
+    .route {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+      gap: 12px;
+      align-items: start;
+      padding: 18px 22px 16px;
+    }
+
+    .route > div:not(.plane) {
+      min-width: 0;
+      display: grid;
+      grid-template-rows: 15px 34px 28px;
+      align-items: start;
+    }
+
+    .airport-label {
+      margin: 0;
+      height: 15px;
+      font-size: 8px;
+      line-height: 1;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .airport {
+      margin: 0;
+      height: 34px;
+      font-size: 22px;
+      line-height: 34px;
+      font-weight: 500;
+      letter-spacing: -0.03em;
+      color: var(--line);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .airport-sub {
+      margin: 0;
+      height: 28px;
+      color: var(--muted);
+      font-size: 9px;
+      line-height: 1.35;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .plane {
+      display: grid;
+      place-items: center;
+      width: 44px;
+      height: 44px;
+      margin-top: 12px;
+      border: 1px solid rgba(79, 86, 81, 0.16);
+      border-radius: 999px;
+      background: var(--plane-bg);
+      font-size: 16px;
+      line-height: 1;
+    }
+
+    .main {
+      padding: 0 22px 18px;
+    }
+
+    .project-box {
+      padding: 13px 13px 12px;
+      border: 1px solid rgba(79, 86, 81, 0.18);
+      border-radius: 15px;
+      background: var(--box-bg);
+    }
+
+    .small-label {
+      margin-bottom: 6px;
+      font-size: 8px;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .project-name {
+      margin: 0 0 8px;
+      font-size: 15px;
+      line-height: 1.45;
+      font-weight: 500;
+      word-break: keep-all;
+    }
+
+    .next-action {
+      margin: 0;
+      min-height: 30px;
+      font-size: 10px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 9px;
+      margin-top: 10px;
+    }
+
+    .info {
+      min-height: 58px;
+      padding: 10px;
+      border: 1px solid rgba(79, 86, 81, 0.14);
+      border-radius: 12px;
+      background: var(--cell-bg);
+    }
+
+    .info .value {
+      font-size: 12px;
+      line-height: 1.35;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .progress-area {
+      margin-top: 13px;
+      padding: 12px;
+      border-radius: 14px;
+      background: var(--progress-bg);
+      border: 1px solid var(--progress-border);
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 9px;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .progress-bar {
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(79,86,81,0.12);
+    }
+
+    .progress-fill {
+      width: 68%;
+      height: 100%;
+      border-radius: inherit;
+      background: var(--accent);
+    }
+
+    .stub {
+      display: grid;
+      grid-template-columns: 1fr 92px;
+      gap: 14px;
+      align-items: center;
+      padding: 16px 22px 20px;
+      border-top: 1px dashed rgba(79, 86, 81, 0.28);
+      background: var(--stub-bg);
+    }
+
+    .stub-info {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      align-items: end;
+      min-height: 54px;
+    }
+
+    .stub-cell {
+      padding: 0;
+      display: grid;
+      grid-template-rows: 15px 20px;
+      align-items: start;
+    }
+
+    .stub-label {
+      margin: 0;
+      height: 15px;
+      font-size: 8px;
+      line-height: 1;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .stub-value {
+      height: 20px;
+      font-size: 11px;
+      line-height: 20px;
+      color: var(--line);
+      white-space: nowrap;
+    }
+
+    .barcode {
+      align-self: center;
+      justify-self: end;
+      width: 86px;
+      height: 54px;
+      display: grid;
+      grid-template-rows: 42px 12px;
+      align-items: end;
+    }
+
+    .barcode-lines {
+      display: flex;
+      justify-content: flex-end;
+      align-items: stretch;
+      height: 42px;
+      gap: 2px;
+    }
+
+    .barcode-lines span {
+      display: block;
+      height: 42px;
+      background: var(--line);
+      border-radius: 0;
+      opacity: 0.76;
+    }
+
+    .barcode-lines span:nth-child(1) { width: 2px; }
+    .barcode-lines span:nth-child(2) { width: 1px; }
+    .barcode-lines span:nth-child(3) { width: 4px; }
+    .barcode-lines span:nth-child(4) { width: 1px; }
+    .barcode-lines span:nth-child(5) { width: 2px; }
+    .barcode-lines span:nth-child(6) { width: 5px; }
+    .barcode-lines span:nth-child(7) { width: 1px; }
+    .barcode-lines span:nth-child(8) { width: 3px; }
+    .barcode-lines span:nth-child(9) { width: 1px; }
+    .barcode-lines span:nth-child(10) { width: 4px; }
+    .barcode-lines span:nth-child(11) { width: 2px; }
+    .barcode-lines span:nth-child(12) { width: 1px; }
+    .barcode-lines span:nth-child(13) { width: 5px; }
+    .barcode-lines span:nth-child(14) { width: 1px; }
+
+    .barcode-number {
+      height: 12px;
+      margin-top: 2px;
+      text-align: right;
+      font-size: 7px;
+      line-height: 10px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      height: 36px;
+      border: 1px solid rgba(79, 86, 81, 0.22);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.62);
+      color: var(--line);
+      font: inherit;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      background: var(--button-bg);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .status {
+      margin-top: 9px;
+      min-height: 12px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 360px) {
+      .shell { padding: 8px; }
+      .header,
+      .route,
+      .main,
+      .stub { padding-left: 18px; padding-right: 18px; }
+      .airport { font-size: 19px; height: 32px; line-height: 32px; }
+      h1 { font-size: 22px; }
+      .stub { grid-template-columns: 1fr 74px; }
+
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="ticket-wrap">
+      <section class="ticket" aria-label="Project Pass Widget">
+        <div class="inner-border"></div>
+
+        <header class="header">
+          <div>
+            <div class="eyebrow">boarding pass</div>
+            <h1>Project Pass</h1>
+          </div>
+          <div class="badge" id="statusBadge">active</div>
+        </header>
+
+        <section class="route">
+          <div>
+            <div class="airport-label">from</div>
+            <p class="airport" id="fromText">PLAN</p>
+            <div class="airport-sub" id="fromSub">current step</div>
+          </div>
+
+          <div class="plane">✈</div>
+
+          <div>
+            <div class="airport-label">to</div>
+            <p class="airport" id="toText">DONE</p>
+            <div class="airport-sub" id="toSub">final delivery</div>
+          </div>
+        </section>
+
+        <section class="main">
+          <div class="project-box">
+            <div class="small-label">project</div>
+            <p class="project-name" id="projectName">Morning Bite Detail Page</p>
+            <p class="next-action" id="nextAction">Next: hero section draft and product story layout.</p>
+
+            <div class="info-grid">
+              <div class="info">
+                <div class="small-label">client</div>
+                <div class="value" id="clientName">Morning Bite</div>
+              </div>
+              <div class="info">
+                <div class="small-label">deadline</div>
+                <div class="value" id="deadline">06.20</div>
+              </div>
+              <div class="info">
+                <div class="small-label">priority</div>
+                <div class="value" id="priority">A</div>
+              </div>
+              <div class="info">
+                <div class="small-label">seat</div>
+                <div class="value" id="seat">25 min</div>
+              </div>
+            </div>
+
+            <div class="progress-area">
+              <div class="progress-top">
+                <span>flight progress</span>
+                <span id="progressText">68%</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="stub">
+          <div class="stub-info">
+            <div class="stub-cell">
+              <div class="stub-label">gate</div>
+              <div class="stub-value" id="gate">A3</div>
+            </div>
+            <div class="stub-cell">
+              <div class="stub-label">date</div>
+              <div class="stub-value" id="date">06.06</div>
+            </div>
+            <div class="stub-cell">
+              <div class="stub-label">flight</div>
+              <div class="stub-value" id="flight">ITJ-01</div>
+            </div>
+          </div>
+
+          <div class="barcode" aria-hidden="true">
+            <div class="barcode-lines">
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span><span></span>
+              <span></span><span></span><span></span><span></span>
+            </div>
+            <div class="barcode-number">1027 0606 24</div>
+          </div>
+        </section>
+      </section>
+
+      <div class="controls">
+        <button class="btn" id="prevBtn" type="button">‹</button>
+        <button class="btn primary" id="openBtn" type="button">open project</button>
+        <button class="btn" id="nextBtn" type="button">›</button>
+      </div>
+
+      <div class="status" id="status">demo mode · notion db ready</div>
+    </div>
+  </main>
+
+  <script>
+    /*
+      Notion DB integration plan:
+      1. Create /api/projects
+      2. Server calls Notion API with NOTION_TOKEN and DATABASE_ID
+      3. Return:
+         [
+           {
+             projectName, clientName, status, deadline,
+             currentStep, destination, nextAction,
+             priority, focusTime, progress, gate, flightNo, url
+           }
+         ]
+      4. Replace DEMO_PROJECTS with fetched data.
+    */
+
+    const DEMO_PROJECTS = [
+      {
+        projectName: "Morning Bite Detail Page",
+        clientName: "Morning Bite",
+        status: "active",
+        deadline: "06.20",
+        currentStep: "PLAN",
+        destination: "DONE",
+        fromSub: "current step",
+        toSub: "final delivery",
+        nextAction: "Next: hero section draft and product story layout.",
+        priority: "A",
+        focusTime: "25 min",
+        progress: 68,
+        gate: "A3",
+        flightNo: "ITJ-01",
+        url: "https://www.notion.so"
+      },
+      {
+        projectName: "Studio Itjae Portfolio",
+        clientName: "Internal",
+        status: "boarding",
+        deadline: "07.01",
+        currentStep: "CASE",
+        destination: "LIVE",
+        fromSub: "case writing",
+        toSub: "site publish",
+        nextAction: "Next: select 5 key projects and write short case notes.",
+        priority: "A",
+        focusTime: "45 min",
+        progress: 42,
+        gate: "B1",
+        flightNo: "ITJ-02",
+        url: "https://www.notion.so"
+      },
+      {
+        projectName: "Notion Widget Series",
+        clientName: "Studio Lab",
+        status: "testing",
+        deadline: "06.30",
+        currentStep: "UI",
+        destination: "SHIP",
+        fromSub: "widget design",
+        toSub: "product launch",
+        nextAction: "Next: polish color variants and connect Notion database.",
+        priority: "B",
+        focusTime: "30 min",
+        progress: 76,
+        gate: "C5",
+        flightNo: "ITJ-03",
+        url: "https://www.notion.so"
+      }
+    ];
+
+    let projects = [...DEMO_PROJECTS];
+    let current = 0;
+
+    const $ = (id) => document.getElementById(id);
+
+    function todayShort() {
+      const now = new Date();
+      const mm = String(now.getMonth() + 1).padStart(2, "0");
+      const dd = String(now.getDate()).padStart(2, "0");
+      return `${mm}.${dd}`;
+    }
+
+    function render() {
+      const item = projects[current];
+
+      if (!item) {
+        $("projectName").textContent = "No project";
+        $("clientName").textContent = "-";
+        $("statusBadge").textContent = "empty";
+        $("deadline").textContent = "--.--";
+        $("fromText").textContent = "---";
+        $("toText").textContent = "---";
+        $("nextAction").textContent = "Connect your Notion project database.";
+        $("progressText").textContent = "0%";
+        $("progressFill").style.width = "0%";
+        $("date").textContent = todayShort();
+        $("gate").textContent = "--";
+        $("flight").textContent = "---";
+        return;
+      }
+
+      $("projectName").textContent = item.projectName;
+      $("clientName").textContent = item.clientName;
+      $("statusBadge").textContent = item.status;
+      $("deadline").textContent = item.deadline;
+      $("fromText").textContent = item.currentStep;
+      $("toText").textContent = item.destination;
+      $("fromSub").textContent = item.fromSub || "current step";
+      $("toSub").textContent = item.toSub || "destination";
+      $("nextAction").textContent = item.nextAction;
+      $("priority").textContent = item.priority;
+      $("seat").textContent = item.focusTime;
+      $("progressText").textContent = `${item.progress}%`;
+      $("progressFill").style.width = `${item.progress}%`;
+      $("gate").textContent = item.gate;
+      $("date").textContent = item.deadline || todayShort();
+      $("flight").textContent = item.flightNo;
+      $("status").textContent = `${String(current + 1).padStart(2, "0")} / ${String(projects.length).padStart(2, "0")} · notion db ready`;
+    }
+
+    function prev() {
+      if (!projects.length) return;
+      current = (current - 1 + projects.length) % projects.length;
+      render();
+    }
+
+    function next() {
+      if (!projects.length) return;
+      current = (current + 1) % projects.length;
+      render();
+    }
+
+    function openProject() {
+      const item = projects[current];
+      if (!item?.url) return;
+      window.open(item.url, "_blank", "noopener,noreferrer");
+    }
+
+    /*
+      Future API connection example:
+
+      async function loadProjects() {
+        const response = await fetch("/api/projects");
+        const data = await response.json();
+        projects = data.projects || [];
+        current = 0;
+        render();
+      }
+
+      loadProjects();
+    */
+
+    $("prevBtn").addEventListener("click", prev);
+    $("nextBtn").addEventListener("click", next);
+    $("openBtn").addEventListener("click", openProject);
+
+    render();
+  </script>
+</body>
+</html>

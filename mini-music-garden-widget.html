@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Music Garden Widget</title>
+  <style>
+    :root {
+      --paper: #fffdf8;
+      --pink: #f8dde2;
+      --blue: #dcebf0;
+      --green: #dde8d2;
+      --yellow: #f7eba8;
+      --line: #4f5651;
+      --muted: #8a8b80;
+      --soft-line: rgba(79, 86, 81, 0.2);
+      --shadow: rgba(79, 86, 81, 0.08);
+      --selected: #fff0c9;
+      --selected-line: #d8b96a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f7f3ea;
+      font-family: Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+        "Noto Sans KR", "Segoe UI", sans-serif;
+      color: var(--line);
+    }
+
+    .shell {
+      width: min(390px, 100vw);
+      padding: 14px;
+    }
+
+    .player {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      padding: 18px;
+      border: 1.5px solid rgba(79, 86, 81, 0.62);
+      border-radius: 24px;
+      background: var(--paper);
+      box-shadow: 0 18px 40px var(--shadow);
+    }
+
+    .player::before {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border: 1px solid rgba(79, 86, 81, 0.16);
+      border-radius: 19px;
+      pointer-events: none;
+    }
+
+    .header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .brand {
+      min-width: 0;
+    }
+
+    .eyebrow {
+      font-size: 10px;
+      letter-spacing: 0.24em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 4px 0 0;
+      font-family: "DM Sans", Inter, Pretendard, sans-serif;
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.03em;
+      color: #49654f;
+    }
+
+    .toggle-add {
+      width: 34px;
+      height: 34px;
+      border: 1px solid rgba(79, 86, 81, 0.2);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.66);
+      color: var(--line);
+      cursor: pointer;
+      font-size: 20px;
+      line-height: 1;
+    }
+
+    .add-panel {
+      position: relative;
+      z-index: 1;
+      display: none;
+      gap: 7px;
+      margin-bottom: 14px;
+    }
+
+    .add-panel.open {
+      display: grid;
+      grid-template-columns: 1fr 54px;
+    }
+
+    input {
+      width: 100%;
+      height: 36px;
+      padding: 0 10px;
+      border: 1px solid rgba(79, 86, 81, 0.22);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.72);
+      color: var(--line);
+      outline: none;
+      font: inherit;
+      font-size: 12px;
+    }
+
+    input:focus {
+      border-color: rgba(216, 185, 106, 0.85);
+      box-shadow: 0 0 0 3px rgba(247, 235, 168, 0.35);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .add-btn,
+    .icon-btn {
+      border: 1px solid rgba(216, 151, 158, 0.65);
+      border-radius: 8px;
+      background: rgba(248, 221, 226, 0.62);
+      color: var(--line);
+      cursor: pointer;
+    }
+
+    .main {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .art {
+      position: relative;
+      width: 96px;
+      height: 96px;
+      border: 1px solid rgba(79, 86, 81, 0.18);
+      border-radius: 16px;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(248,221,226,0.52), transparent 44%),
+        linear-gradient(315deg, rgba(220,235,240,0.6), transparent 48%),
+        #fff8ef;
+    }
+
+    .art img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: saturate(0.92);
+    }
+
+    .disc {
+      position: absolute;
+      right: -18px;
+      top: 18px;
+      width: 62px;
+      height: 62px;
+      border: 1px solid rgba(79, 86, 81, 0.32);
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at center, var(--paper) 0 8px, transparent 9px),
+        repeating-radial-gradient(circle, rgba(79,86,81,0.08) 0 1px, transparent 1px 6px),
+        rgba(255,255,255,0.72);
+      opacity: 0.88;
+    }
+
+    .empty-art {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+
+    .info {
+      min-width: 0;
+    }
+
+    .track-label {
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .track-title {
+      margin-top: 6px;
+      font-size: 15px;
+      line-height: 1.35;
+      font-weight: 500;
+      word-break: keep-all;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .fake-bar {
+      position: relative;
+      height: 5px;
+      margin: 12px 0 11px;
+      border-radius: 999px;
+      background: rgba(79,86,81,0.12);
+      overflow: hidden;
+    }
+
+    .fake-bar span {
+      display: block;
+      width: 38%;
+      height: 100%;
+      border-radius: inherit;
+      background: #d8b96a;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 32px 42px 32px 1fr;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .icon-btn {
+      height: 32px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.62);
+      border-color: rgba(79, 86, 81, 0.18);
+      font-size: 12px;
+    }
+
+    .play {
+      height: 42px;
+      border-radius: 999px;
+      background: rgba(248, 221, 226, 0.72);
+      border-color: rgba(216, 151, 158, 0.65);
+      font-size: 15px;
+    }
+
+    .open {
+      height: 32px;
+      border-radius: 999px;
+      background: rgba(247, 235, 168, 0.42);
+      border-color: rgba(216, 185, 106, 0.38);
+      font-size: 11px;
+      letter-spacing: 0.04em;
+    }
+
+    .mini-list {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      gap: 6px;
+      margin-top: 14px;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .mini-track {
+      flex: 0 0 auto;
+      width: 44px;
+      height: 44px;
+      border: 1px solid rgba(79,86,81,0.16);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .mini-track.active {
+      border-color: var(--selected-line);
+      box-shadow: 0 0 0 2px rgba(247,235,168,0.48);
+      opacity: 1;
+    }
+
+    .mini-track img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .status {
+      position: relative;
+      z-index: 1;
+      margin-top: 9px;
+      min-height: 16px;
+      text-align: center;
+      font-size: 10px;
+      color: var(--muted);
+    }
+
+    .iframe-wrap {
+      display: none;
+      position: relative;
+      z-index: 1;
+      margin-top: 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(79,86,81,0.16);
+      aspect-ratio: 16 / 9;
+      background: #000;
+    }
+
+    .iframe-wrap.show {
+      display: block;
+    }
+
+    .iframe-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+
+    @media (max-width: 360px) {
+      .player { padding: 16px; }
+      .main { grid-template-columns: 84px 1fr; gap: 12px; }
+      .art { width: 84px; height: 84px; }
+      h1 { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="player" aria-label="Mini Music Garden Player">
+      <header class="header">
+        <div class="brand">
+          <div class="eyebrow">Notion widget</div>
+          <h1>Mini Music</h1>
+        </div>
+        <button class="toggle-add" id="toggleAdd" type="button" aria-label="Add YouTube link">＋</button>
+      </header>
+
+      <div class="add-panel" id="addPanel">
+        <input id="urlInput" type="url" placeholder="YouTube link or ID" />
+        <button class="add-btn" id="addBtn" type="button">Add</button>
+      </div>
+
+      <section class="main">
+        <div class="art" id="art">
+          <div class="disc"></div>
+          <div class="empty-art">YouTube<br />link</div>
+        </div>
+
+        <div class="info">
+          <div class="track-label">now playing</div>
+          <div class="track-title" id="trackTitle">음악을 추가해 주세요</div>
+          <div class="fake-bar"><span></span></div>
+
+          <div class="controls">
+            <button class="icon-btn" id="prevBtn" type="button">‹</button>
+            <button class="icon-btn play" id="playBtn" type="button">▶</button>
+            <button class="icon-btn" id="nextBtn" type="button">›</button>
+            <button class="icon-btn open" id="openBtn" type="button">Open</button>
+          </div>
+        </div>
+      </section>
+
+      <div class="iframe-wrap" id="iframeWrap"></div>
+      <div class="mini-list" id="miniList"></div>
+      <div class="status" id="status">＋ 버튼으로 유튜브 링크를 추가해요.</div>
+    </section>
+  </main>
+
+  <script>
+    const KEY = "mini-music-garden-v1";
+    let tracks = [];
+    let current = -1;
+    let playerOpen = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    function extractYouTubeId(value) {
+      const text = value.trim();
+      if (/^[a-zA-Z0-9_-]{11}$/.test(text)) return text;
+
+      const short = text.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+      if (short) return short[1];
+
+      try {
+        const url = new URL(text);
+        if (url.hostname.includes("youtube.com")) {
+          if (url.pathname === "/watch") return url.searchParams.get("v");
+          const embed = url.pathname.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
+          if (embed) return embed[1];
+          const shorts = url.pathname.match(/\/shorts\/([a-zA-Z0-9_-]{11})/);
+          if (shorts) return shorts[1];
+        }
+      } catch (error) {}
+
+      return null;
+    }
+
+    function thumb(id) {
+      return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    }
+
+    function watch(id) {
+      return `https://www.youtube.com/watch?v=${id}`;
+    }
+
+    function save() {
+      localStorage.setItem(KEY, JSON.stringify({ tracks, current }));
+    }
+
+    function load() {
+      try {
+        const data = JSON.parse(localStorage.getItem(KEY));
+        if (Array.isArray(data?.tracks)) {
+          tracks = data.tracks;
+          current = typeof data.current === "number" ? data.current : (tracks.length ? 0 : -1);
+        }
+      } catch (error) {}
+    }
+
+    function render() {
+      const track = tracks[current];
+      const art = $("art");
+      const iframeWrap = $("iframeWrap");
+
+      if (!track) {
+        art.innerHTML = `<div class="disc"></div><div class="empty-art">YouTube<br />link</div>`;
+        $("trackTitle").textContent = "음악을 추가해 주세요";
+        $("openBtn").disabled = true;
+        iframeWrap.classList.remove("show");
+        iframeWrap.innerHTML = "";
+      } else {
+        art.innerHTML = `<img src="${thumb(track.id)}" alt=""><div class="disc"></div>`;
+        $("trackTitle").textContent = track.title;
+        $("openBtn").disabled = false;
+
+        if (playerOpen) {
+          iframeWrap.classList.add("show");
+          iframeWrap.innerHTML = `
+            <iframe
+              title="YouTube player"
+              src="https://www.youtube.com/embed/${track.id}?autoplay=1&rel=0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen>
+            </iframe>`;
+        } else {
+          iframeWrap.classList.remove("show");
+          iframeWrap.innerHTML = "";
+        }
+      }
+
+      $("playBtn").textContent = playerOpen ? "■" : "▶";
+
+      const mini = $("miniList");
+      mini.innerHTML = "";
+      tracks.forEach((item, index) => {
+        const btn = document.createElement("button");
+        btn.className = `mini-track ${index === current ? "active" : ""}`;
+        btn.type = "button";
+        btn.innerHTML = `<img src="${thumb(item.id)}" alt="">`;
+        btn.addEventListener("click", () => {
+          current = index;
+          playerOpen = false;
+          save();
+          render();
+        });
+        mini.appendChild(btn);
+      });
+    }
+
+    function addTrack() {
+      const id = extractYouTubeId($("urlInput").value);
+      if (!id) {
+        $("status").textContent = "유튜브 링크를 다시 확인해 주세요.";
+        return;
+      }
+
+      if (tracks.some(t => t.id === id)) {
+        $("status").textContent = "이미 들어간 음악이에요.";
+        return;
+      }
+
+      tracks.push({
+        id,
+        title: `YouTube Track ${tracks.length + 1}`
+      });
+
+      current = tracks.length - 1;
+      playerOpen = false;
+      $("urlInput").value = "";
+      $("addPanel").classList.remove("open");
+      $("status").textContent = "추가했어요.";
+      save();
+      render();
+    }
+
+    $("toggleAdd").addEventListener("click", () => {
+      $("addPanel").classList.toggle("open");
+      if ($("addPanel").classList.contains("open")) $("urlInput").focus();
+    });
+
+    $("addBtn").addEventListener("click", addTrack);
+    $("urlInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") addTrack();
+    });
+
+    $("playBtn").addEventListener("click", () => {
+      if (current < 0) {
+        $("status").textContent = "먼저 음악을 추가해 주세요.";
+        return;
+      }
+      playerOpen = !playerOpen;
+      render();
+    });
+
+    $("openBtn").addEventListener("click", () => {
+      const track = tracks[current];
+      if (track) window.open(watch(track.id), "_blank", "noopener,noreferrer");
+    });
+
+    $("prevBtn").addEventListener("click", () => {
+      if (!tracks.length) return;
+      current = (current - 1 + tracks.length) % tracks.length;
+      playerOpen = false;
+      save();
+      render();
+    });
+
+    $("nextBtn").addEventListener("click", () => {
+      if (!tracks.length) return;
+      current = (current + 1) % tracks.length;
+      playerOpen = false;
+      save();
+      render();
+    });
+
+    load();
+    render();
+  </script>
+</body>
+</html>

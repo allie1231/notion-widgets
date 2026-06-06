@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Habit Console Widget</title>
+  <style>
+    :root {
+      --paper: #fffdf8;
+      --cream: #fff8ef;
+      --panel: #f4f6ee;
+      --line: #4f5651;
+      --muted: #85877d;
+      --soft-line: rgba(79, 86, 81, 0.18);
+      --shadow: rgba(79, 86, 81, 0.11);
+      --green: #dce8d2;
+      --blue: #dcebf0;
+      --pink: #f8dde2;
+      --yellow: #f7eba8;
+      --accent: #9eb48a;
+      --done: #4f5651;
+      --miss: rgba(79, 86, 81, 0.16);
+      --screen: #eef3e8;
+      --screen-line: rgba(79, 86, 81, 0.26);
+      --button-bg: rgba(255, 255, 255, 0.62);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #f7f3ea;
+      color: var(--line);
+      font-family: "SF Mono", "IBM Plex Mono", "Roboto Mono", "Space Mono",
+        ui-monospace, Menlo, Consolas, monospace;
+    }
+
+    .shell {
+      width: min(380px, 100vw);
+      padding: 14px;
+    }
+
+    .console {
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+      padding: 18px;
+      border: 1.5px solid rgba(79, 86, 81, 0.64);
+      border-radius: 28px;
+      background: var(--paper);
+      box-shadow: 0 18px 44px var(--shadow);
+    }
+
+    .console::before {
+      content: "";
+      position: absolute;
+      inset: 9px;
+      border: 1px solid rgba(79, 86, 81, 0.14);
+      border-radius: 22px;
+      pointer-events: none;
+    }
+
+    .top {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 54px 1fr 54px;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .brand {
+      text-align: center;
+      min-width: 0;
+    }
+
+    .eyebrow {
+      margin-bottom: 4px;
+      font-size: 8px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: #49654f;
+    }
+
+    .status-pill {
+      justify-self: start;
+      display: inline-grid;
+      place-items: center;
+      height: 25px;
+      padding: 0 8px;
+      border: 1px solid rgba(79, 86, 81, 0.18);
+      border-radius: 999px;
+      background: var(--green);
+      color: var(--line);
+      font-size: 8px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .mode-pill {
+      justify-self: end;
+      display: inline-grid;
+      place-items: center;
+      height: 25px;
+      padding: 0 8px;
+      border: 1px solid rgba(79, 86, 81, 0.18);
+      border-radius: 999px;
+      background: var(--pink);
+      color: var(--line);
+      font-size: 8px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .screen {
+      position: relative;
+      z-index: 1;
+      padding: 13px;
+      border: 1.5px solid rgba(79, 86, 81, 0.36);
+      border-radius: 18px;
+      background: var(--screen);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.22),
+        inset 0 -10px 20px rgba(79,86,81,0.035);
+    }
+
+    .screen-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 9px;
+      border-bottom: 1px solid var(--screen-line);
+    }
+
+    .week-label {
+      min-width: 0;
+    }
+
+    .small {
+      margin-bottom: 4px;
+      font-size: 8px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .week-range {
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      color: var(--line);
+    }
+
+    .battery {
+      width: 27px;
+      height: 11px;
+      border: 1px solid rgba(79,86,81,0.42);
+      border-radius: 2px;
+      padding: 1px;
+      position: relative;
+    }
+
+    .battery::after {
+      content: "";
+      position: absolute;
+      right: -4px;
+      top: 3px;
+      width: 2px;
+      height: 4px;
+      background: rgba(79,86,81,0.42);
+      border-radius: 0 1px 1px 0;
+    }
+
+    .battery span {
+      display: block;
+      width: 72%;
+      height: 100%;
+      border-radius: 1px;
+      background: var(--yellow);
+    }
+
+    .grid {
+      display: grid;
+      gap: 8px;
+    }
+
+    .days,
+    .habit-row {
+      display: grid;
+      grid-template-columns: 80px repeat(7, 1fr);
+      gap: 5px;
+      align-items: center;
+    }
+
+    .days {
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .days span {
+      text-align: center;
+    }
+
+    .habit-name {
+      min-width: 0;
+      font-size: 10px;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--line);
+    }
+
+    .dot {
+      justify-self: center;
+      width: 13px;
+      height: 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(79, 86, 81, 0.24);
+      background: var(--miss);
+    }
+
+    .dot.done {
+      background: var(--done);
+      border-color: var(--done);
+      box-shadow: inset 0 0 0 3px rgba(255,255,255,0.18);
+    }
+
+    .dot.today {
+      outline: 2px solid var(--yellow);
+      outline-offset: 2px;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 13px;
+      padding-top: 12px;
+      border-top: 1px solid var(--screen-line);
+    }
+
+    .metric {
+      min-height: 54px;
+      padding: 9px 7px;
+      border: 1px solid rgba(79, 86, 81, 0.14);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.36);
+    }
+
+    .metric-label {
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 7px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .metric-value {
+      font-size: 15px;
+      line-height: 1;
+      color: var(--line);
+    }
+
+    .progress {
+      margin-top: 13px;
+      height: 7px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(79,86,81,0.12);
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: var(--accent);
+      transition: width 0.25s ease;
+    }
+
+    .controls {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 44px 1fr 44px;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      height: 38px;
+      border: 1px solid rgba(79, 86, 81, 0.22);
+      border-radius: 12px;
+      background: var(--button-bg);
+      color: var(--line);
+      font: inherit;
+      font-size: 10px;
+      cursor: pointer;
+    }
+
+    .btn.primary {
+      background: var(--blue);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .status {
+      position: relative;
+      z-index: 1;
+      min-height: 12px;
+      margin-top: 10px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 8px;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 360px) {
+      .shell { padding: 8px; }
+      .console { padding: 16px; }
+      .days,
+      .habit-row {
+        grid-template-columns: 72px repeat(7, 1fr);
+        gap: 4px;
+      }
+      .habit-name { font-size: 9px; }
+      .dot { width: 12px; height: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="console" aria-label="Habit Console Widget">
+      <header class="top">
+        <div class="status-pill">sync</div>
+        <div class="brand">
+          <div class="eyebrow">notion db</div>
+          <h1>Habit Console</h1>
+        </div>
+        <div class="mode-pill">week</div>
+      </header>
+
+      <section class="screen">
+        <div class="screen-head">
+          <div class="week-label">
+            <div class="small">weekly log</div>
+            <div class="week-range" id="weekRange">2026.06.01 - 06.07</div>
+          </div>
+          <div class="battery"><span></span></div>
+        </div>
+
+        <div class="grid">
+          <div class="days">
+            <span></span>
+            <span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span>
+          </div>
+          <div id="habitGrid"></div>
+        </div>
+
+        <div class="summary">
+          <div class="metric">
+            <div class="metric-label">score</div>
+            <div class="metric-value" id="scoreText">00%</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">streak</div>
+            <div class="metric-value" id="streakText">00</div>
+          </div>
+          <div class="metric">
+            <div class="metric-label">done</div>
+            <div class="metric-value" id="doneText">00</div>
+          </div>
+        </div>
+
+        <div class="progress"><span id="progressFill"></span></div>
+      </section>
+
+      <div class="controls">
+        <button class="btn" id="prevBtn" type="button">‹</button>
+        <button class="btn primary" id="todayBtn" type="button">today</button>
+        <button class="btn" id="nextBtn" type="button">›</button>
+      </div>
+
+      <div class="status" id="status">demo mode · notion db ready</div>
+    </section>
+  </main>
+
+  <script>
+    /*
+      Notion DB integration plan, simple A-type:
+      Database properties:
+      - Date: date
+      - Morning Pages: checkbox
+      - Reading: checkbox
+      - Walk: checkbox
+      - English: checkbox
+      - Design Note: checkbox
+      - Note: rich_text
+
+      Server route:
+      /api/habits?weekStart=YYYY-MM-DD
+
+      Response:
+      {
+        habits: ["Morning", "Reading", "Walk", "English", "Design"],
+        days: [
+          { date: "2026-06-01", values: { Morning: true, Reading: true } }
+        ]
+      }
+    */
+
+    const HABITS = ["Morning", "Reading", "Walk", "English", "Design"];
+    const WEEK_DATA = [
+      [true, true, false, true, true, false, true],
+      [true, false, true, true, false, true, false],
+      [false, true, true, true, false, true, true],
+      [false, false, true, true, false, true, false],
+      [true, true, true, false, true, false, true],
+    ];
+
+    let weekOffset = 0;
+
+    const $ = (id) => document.getElementById(id);
+
+    function startOfWeek(date) {
+      const d = new Date(date);
+      const day = d.getDay();
+      const diff = day === 0 ? -6 : 1 - day;
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function formatDate(date, includeYear = false) {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      return includeYear ? `${yyyy}.${mm}.${dd}` : `${mm}.${dd}`;
+    }
+
+    function getWeekDates() {
+      const base = startOfWeek(new Date());
+      base.setDate(base.getDate() + weekOffset * 7);
+      return Array.from({ length: 7 }, (_, i) => addDays(base, i));
+    }
+
+    function isSameDate(a, b) {
+      return a.getFullYear() === b.getFullYear() &&
+        a.getMonth() === b.getMonth() &&
+        a.getDate() === b.getDate();
+    }
+
+    function calculateStats() {
+      const total = HABITS.length * 7;
+      let done = 0;
+      WEEK_DATA.forEach(row => row.forEach(v => { if (v) done += 1; }));
+      const score = Math.round((done / total) * 100);
+
+      let bestStreak = 0;
+      HABITS.forEach((habit, idx) => {
+        let streak = 0;
+        WEEK_DATA[idx].forEach(v => {
+          if (v) {
+            streak += 1;
+            bestStreak = Math.max(bestStreak, streak);
+          } else {
+            streak = 0;
+          }
+        });
+      });
+
+      return { done, total, score, bestStreak };
+    }
+
+    function render() {
+      const dates = getWeekDates();
+      const today = new Date();
+      const grid = $("habitGrid");
+      grid.innerHTML = "";
+
+      $("weekRange").textContent = `${formatDate(dates[0], true)} - ${formatDate(dates[6])}`;
+
+      HABITS.forEach((habit, habitIndex) => {
+        const row = document.createElement("div");
+        row.className = "habit-row";
+
+        const name = document.createElement("div");
+        name.className = "habit-name";
+        name.textContent = habit;
+        row.appendChild(name);
+
+        WEEK_DATA[habitIndex].forEach((done, dayIndex) => {
+          const dot = document.createElement("span");
+          dot.className = `dot ${done ? "done" : ""} ${isSameDate(dates[dayIndex], today) ? "today" : ""}`;
+          dot.title = `${habit} · ${formatDate(dates[dayIndex], true)} · ${done ? "done" : "miss"}`;
+          row.appendChild(dot);
+        });
+
+        grid.appendChild(row);
+      });
+
+      const stats = calculateStats();
+      $("scoreText").textContent = `${String(stats.score).padStart(2, "0")}%`;
+      $("streakText").textContent = String(stats.bestStreak).padStart(2, "0");
+      $("doneText").textContent = String(stats.done).padStart(2, "0");
+      $("progressFill").style.width = `${stats.score}%`;
+
+      if (weekOffset === 0) {
+        $("status").textContent = "this week · notion db ready";
+      } else if (weekOffset < 0) {
+        $("status").textContent = `${Math.abs(weekOffset)} week back · demo mode`;
+      } else {
+        $("status").textContent = `${weekOffset} week ahead · demo mode`;
+      }
+    }
+
+    $("prevBtn").addEventListener("click", () => {
+      weekOffset -= 1;
+      render();
+    });
+
+    $("nextBtn").addEventListener("click", () => {
+      weekOffset += 1;
+      render();
+    });
+
+    $("todayBtn").addEventListener("click", () => {
+      weekOffset = 0;
+      render();
+    });
+
+    /*
+      Future API example:
+
+      async function loadHabits() {
+        const dates = getWeekDates();
+        const response = await fetch(`/api/habits?weekStart=${dates[0].toISOString().slice(0,10)}`);
+        const data = await response.json();
+        // HABITS and WEEK_DATA can be replaced from data.
+        render();
+      }
+
+      loadHabits();
+    */
+
+    render();
+  </script>
+</body>
+</html>
